@@ -1,0 +1,8 @@
+reference.mp3
+test.mp3
+
+# Scala
+target/
+project/target/
+
+.idea
