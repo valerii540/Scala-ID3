@@ -5,7 +5,7 @@ object Main extends App {
 
   val ID3Parser = new ID3Parser(filePath)
 
-  ID3Parser.print()
+  ID3Parser.prettyPrint()
 
   ID3Parser.close()
 }

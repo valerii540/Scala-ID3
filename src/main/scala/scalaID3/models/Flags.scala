@@ -1,7 +1,13 @@
 package scalaID3.models
 
-sealed trait Flag
+object Flags extends Enumeration {
+  type Flag = Value
 
-case object Unsynchronisation extends Flag
-case object ExtendedHeader extends Flag
-case object Experimental extends Flag
+  val Unsynchronisation, ExtendedHeader, Experimental = Value
+}
+
+object ExtendedFlags extends Enumeration {
+  type ExtendedFlag = Value
+
+  val HasCRC = Value
+}
