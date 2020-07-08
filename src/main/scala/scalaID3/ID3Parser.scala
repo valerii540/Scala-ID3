@@ -8,7 +8,6 @@ import scala.util.{Failure, Try}
 
 sealed trait ParserOps {
   def close(): Unit
-
   def prettyPrint(): Unit
 }
 
@@ -35,10 +34,10 @@ final class ID3Parser(private val filePath: String) extends ParserOps {
     val headerBytes = new Array[Byte](10)
     file.read(headerBytes)
 
-    val idBytes = headerBytes.take(3)
+    val idBytes      = headerBytes.take(3)
     val versionBytes = headerBytes.slice(3, 5)
-    val flagsByte = headerBytes(5)
-    val sizeBytes = headerBytes.drop(6)
+    val flagsByte    = headerBytes(5)
+    val sizeBytes    = headerBytes.drop(6)
 
     Header(
       id = idBytes.map(_.toChar).mkString,
@@ -57,8 +56,8 @@ final class ID3Parser(private val filePath: String) extends ParserOps {
     val extendedHeaderBytes = new Array[Byte](10)
     file.read(extendedHeaderBytes)
 
-    val ehSizeBytes = extendedHeaderBytes.take(4)
-    val ehFlagsBytes = extendedHeaderBytes.slice(4, 6)
+    val ehSizeBytes        = extendedHeaderBytes.take(4)
+    val ehFlagsBytes       = extendedHeaderBytes.slice(4, 6)
     val ehPaddingSizeBytes = extendedHeaderBytes.drop(6)
 
     val CRC32 = Option.when((1 << 7 & ehFlagsBytes.head) != 0) {
