@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<configuration scan="true" scanPeriod="1 minutes">
+    <statusListener class="ch.qos.logback.core.status.NopStatusListener" />
+
+    <property name="WORKER_LOG_LEVEL" value="${WORKER_LOG_LEVEL:-INFO}"/>
+    <property name="GLOBAL_LOG_LEVEL" value="${GLOBAL_LOG_LEVEL:-INFO}"/>
+
+    <!--Pattern docs: https://logback.qos.ch/manual/layouts.html#ClassicPatternLayout-->
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>[%highlight(%-5level)] %date{ISO8601} [%blue(%-11(worker))] %-40logger{40} %X{workId} - %replace(%msg){'\n',' '}%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="asyncStdout" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="STDOUT"/>
+    </appender>
+
+
+    <root level="${GLOBAL_LOG_LEVEL}">
+        <appender-ref ref="asyncStdout"/>
+    </root>
+
+</configuration>
