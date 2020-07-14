@@ -28,7 +28,6 @@ sealed trait ID3TagWriteOps {
 }
 
 final class ID3Tag(private val filePath: String) extends ID3TagWriteOps with ID3TagReadOps with LazyLogging {
-  import models.frames.FrameTypes.frameTypesDict
   private implicit val file: RandomAccessFile = new RandomAccessFile(filePath, "r")
 
   val header: Header = parseHeader()
@@ -94,7 +93,7 @@ final class ID3Tag(private val filePath: String) extends ID3TagWriteOps with ID3
     )
 
   override def getPictureFrame(pictureType: PictureType = PictureTypes.FrontCover): Option[AttachedPictureFrame] =
-    framesWithPositions(frameTypesDict(FrameTypes.Picture))
+    framesWithPositions(FrameTypes.Picture.toString)
       .collectFirst { case FrameWithPosition(frame: AttachedPictureFrame, _) if frame.pictureType == pictureType => frame }
 
   override def getPictureAsFile(path: String, pictureType: PictureType = PictureTypes.FrontCover): File = {
@@ -113,9 +112,9 @@ final class ID3Tag(private val filePath: String) extends ID3TagWriteOps with ID3
   override def close(): Unit = file.close()
 
   override def getFrame(frameType: FrameType): Option[Frame] =
-    framesWithPositions(frameTypesDict(frameType)).headOption.map(_.frame)
+    framesWithPositions(frameType.toString).headOption.map(_.frame)
 
   override def getTextInfoFrame(frameType: FrameType): Option[TextInfoFrame] =
-    framesWithPositions(frameTypesDict(frameType)).headOption
+    framesWithPositions(frameType.toString).headOption
       .map(_.frame.as[TextInfoFrame])
 }

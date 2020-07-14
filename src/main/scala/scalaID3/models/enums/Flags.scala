@@ -9,7 +9,7 @@ object Flags extends Enumeration {
 object ExtendedFlags extends Enumeration {
   type ExtendedFlag = Value
 
-  val HasCRC = Value
+  val HasCRC: ExtendedFlag = Value
 }
 
 object FrameFlags extends Enumeration {
