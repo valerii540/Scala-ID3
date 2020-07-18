@@ -1,28 +1,25 @@
+import java.io.File
+
 import scalaID3.ID3Tag
-import scalaID3.models.frames.AttachedPictureFrame.PictureTypes
-import scalaID3.models.frames.FrameTypes
 
 object Main extends App {
-  val filePath = "test.mp3"
+  list()
 
-  val ID3Parser = new ID3Tag(filePath)
+  def list(): Unit = {
+    val musicDir = new File("/home/vbosiak/Music")
 
-  ID3Parser.prettyPrint()
+    musicDir.listFiles.toList.foreach { file =>
+      val id3tag = new ID3Tag(file.getAbsolutePath)
+      println(
+        s"""
+          |song: ${file.getName}
+          |
+          |${id3tag.getFrames.mkString("\n")}
+          |----------------------
+          |""".stripMargin)
 
-  ID3Parser.getPictureAsFile("image", PictureTypes.FrontCover)
 
-  ID3Parser.getTextInfoFrame(FrameTypes.Album).get.value
-
-  printID3()
-
-  ID3Parser.close()
-
-  def printID3(): Unit =
-    println(
-      s"""
-        |Band:  ${ID3Parser.getTextInfoFrame(FrameTypes.Band).map(_.value)}
-        |Title: ${ID3Parser.getTextInfoFrame(FrameTypes.Title).map(_.value)}
-        |Album: ${ID3Parser.getTextInfoFrame(FrameTypes.Album).map(_.value)}
-        |""".stripMargin
-    )
+      id3tag.close()
+    }
+  }
 }

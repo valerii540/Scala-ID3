@@ -5,16 +5,13 @@ import java.nio.charset.{Charset, StandardCharsets}
 import scalaID3.models.FrameHeader
 import scalaID3.models.frames.TextInfoFrame.TextEncodings.Encoding
 
-final case class TextInfoFrame(frameHeader: FrameHeader, encoding: Encoding, description: Option[String], value: String) extends Frame {
-  override def prettySting: String =
-    s"""|--- TEXT INFO FRAME (${frameHeader.frameId}) ---
-        |${frameHeader.prettySting}
-        |----- BODY -----
-        |encoding: $encoding
-        |${description.map(_ => "description: " + _).getOrElse("")}
-        |value: $value
-        |""".stripMargin.replaceAll("\n\n", "\n")
-}
+sealed case class TextInfoFrame(frameHeader: FrameHeader, encoding: Encoding, value: String) extends Frame
+final class UserTextInfoFrame(override val frameHeader: FrameHeader,
+                              override val encoding: Encoding,
+                              override val value: String,
+                              val description: Option[String])
+    extends TextInfoFrame(frameHeader, encoding, value)
+
 object TextInfoFrame {
   object TextEncodings extends Enumeration {
     type Encoding = Value
