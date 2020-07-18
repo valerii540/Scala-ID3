@@ -43,6 +43,8 @@ object FrameTypes extends Enumeration {
   val Year: FrameType                = Value("TYER") // always 4 characters
   val UserDefinedText: FrameType     = Value("TXXX") // ok
 
+  val Comment: FrameType = Value("COMM")
+
   val Picture: FrameType = Value("APIC")
 
   val Unknown: FrameType = Value("unknown")
