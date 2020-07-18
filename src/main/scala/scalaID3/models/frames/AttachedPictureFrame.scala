@@ -10,18 +10,7 @@ final case class AttachedPictureFrame(frameHeader: FrameHeader,
                                       pictureType: PictureType,
                                       description: String,
                                       pictureData: Array[Byte])
-    extends Frame {
-  override def prettySting: String =
-    s"""|--- ATTACHED PICTURE FRAME (${frameHeader.frameId}) ---
-        |${frameHeader.prettySting}
-        |----- BODY -----
-        |textEncoding: $textEncoding
-        |mimeType: $mimeType
-        |pictureType: ${pictureType}
-        |description: $description
-        |pictureData size: ${pictureData.length} B
-        |""".stripMargin.replaceAll("\n\n", "\n")
-}
+    extends Frame
 
 object AttachedPictureFrame {
   object PictureTypes extends Enumeration {

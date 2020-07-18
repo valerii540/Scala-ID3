@@ -3,41 +3,36 @@ package scalaID3
 import java.awt.image.BufferedImage
 import java.io.{ByteArrayInputStream, File, RandomAccessFile}
 
-import com.typesafe.scalalogging.LazyLogging
 import javax.imageio.ImageIO
 import scalaID3.Helper._
 import scalaID3.models._
-import scalaID3.models.enums.{ExtendedFlags, Flags}
+import scalaID3.models.enums.{ExtendedFlags, Flags, FrameTypes}
 import scalaID3.models.frames.AttachedPictureFrame.PictureTypes
 import scalaID3.models.frames.AttachedPictureFrame.PictureTypes.PictureType
-import scalaID3.models.frames.FrameTypes.FrameType
-import scalaID3.models.frames.{AttachedPictureFrame, Frame, FrameTypes, TextInfoFrame}
+import scalaID3.models.enums.FrameTypes.FrameType
+import scalaID3.models.frames.{AttachedPictureFrame, Frame, TextInfoFrame}
 
 import scala.util.{Failure, Try}
 
-sealed trait ID3TagReadOps {
+sealed trait ID3TagOps {
   def getFrame(frameType: FrameType): Option[Frame]
   def getTextInfoFrame(frameType: FrameType): Option[TextInfoFrame]
   def getPictureFrame(pictureType: PictureType): Option[AttachedPictureFrame]
   def getPictureAsFile(path: String, pictureType: PictureType): File
-  def prettyPrint(): Unit
-}
-
-sealed trait ID3TagWriteOps {
   def close(): Unit
 }
 
-final class ID3Tag(private val filePath: String) extends ID3TagWriteOps with ID3TagReadOps with LazyLogging {
+final class ID3Tag(private val filePath: String) extends ID3TagOps {
   private implicit val file: RandomAccessFile = new RandomAccessFile(filePath, "r")
 
-  val header: Header = parseHeader()
+  val header: ID3Header = parseHeader()
 
   private val framesWithPositions = FrameParser.traverseWholeFile(Map.empty.withDefaultValue(Nil))
 
   //TODO: is it needed?
   def getFrames: Seq[Frame] = framesWithPositions.values.flatten.map(_.frame).toSeq
 
-  private def parseHeader(): Header = {
+  private def parseHeader(): ID3Header = {
     val id        = file.take(3).map(_.toChar).mkString
     val version   = "v2." + file.take(2).mkString(".")
     val flagsByte = file.readByte()
@@ -66,7 +61,7 @@ final class ID3Tag(private val filePath: String) extends ID3TagWriteOps with ID3
     val sizeOfPadding = Option.when(isExtended)(file.readInt())
     val CRC32         = Option.when(isExtended && extendedFlags.get.contains(ExtendedFlags.HasCRC))(file.readInt())
 
-    Header(
+    ID3Header(
       id = id,
       version = version,
       flags = Set(
@@ -81,16 +76,6 @@ final class ID3Tag(private val filePath: String) extends ID3TagWriteOps with ID3
       CRC32 = CRC32
     )
   }
-
-  override def prettyPrint(): Unit =
-    println(
-      s"""
-         |File: $filePath
-         |
-         |${header.prettySting}
-         |${framesWithPositions.mkString("\n")}
-         |""".stripMargin
-    )
 
   override def getPictureFrame(pictureType: PictureType = PictureTypes.FrontCover): Option[AttachedPictureFrame] =
     framesWithPositions(FrameTypes.Picture.toString)

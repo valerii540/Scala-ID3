@@ -6,7 +6,7 @@ import scalaID3.Helper._
 import scalaID3.models.enums.FrameFlags
 import scalaID3.models.frames.AttachedPictureFrame.PictureTypes
 import scalaID3.models.frames.TextInfoFrame.TextEncodings
-import scalaID3.models.frames.{AttachedPictureFrame, TextInfoFrame}
+import scalaID3.models.frames.{AttachedPictureFrame, TextInfoFrame, UserTextInfoFrame}
 import scalaID3.models.{FrameHeader, FrameWithPosition, frames}
 
 import scala.annotation.tailrec
@@ -20,8 +20,8 @@ private[scalaID3] object FrameParser {
     val frameHeader = parseFrameHeader()
 
     frameHeader.frameId match {
-      case id if id.startsWith("T") =>
-        val frame = parseTextInfoFrame(frameHeader)
+      case id if id.head == 'T' =>
+        val frame = if (id(1) != 'X') parseTextInfoFrame(frameHeader) else parseUserTextInfoFrame(frameHeader)
         traverseWholeFile(acc + (id -> (FrameWithPosition(frame, framePosition) +: acc(id))))
       case id if id == "APIC" =>
         val frame = parseAttachedPictureFrame(frameHeader)
@@ -57,17 +57,29 @@ private[scalaID3] object FrameParser {
   }
 
   def parseTextInfoFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): TextInfoFrame = {
+    val isUserDefined = frameHeader.frameId.startsWith("TX")
+
     val encoding         = TextEncodings.identify(file.readByte())
-    val descriptionBytes = Option.when(frameHeader.frameId == "TXXX")(file.takeWhile(_ != 0))
+    val descriptionBytes = Option.when(isUserDefined)(file.takeWhile(_ != 0))
     val informationBytes = file.take(frameHeader.size - descriptionBytes.map(_.length).getOrElse(0) - 1)
 
-    frames.TextInfoFrame(
-      frameHeader = frameHeader,
-      encoding = encoding,
-      description = descriptionBytes.map(s => new String(s.toArray, TextEncodings.standardCharset(encoding))),
-      value = new String(informationBytes.toArray, TextEncodings.standardCharset(encoding))
-    )
+    if (isUserDefined)
+      new UserTextInfoFrame(
+        frameHeader = frameHeader,
+        encoding = encoding,
+        description = descriptionBytes.map(s => new String(s.toArray, TextEncodings.standardCharset(encoding))),
+        value = new String(informationBytes.toArray, TextEncodings.standardCharset(encoding))
+      )
+    else
+      TextInfoFrame(
+        frameHeader = frameHeader,
+        encoding = encoding,
+        value = new String(informationBytes.toArray, TextEncodings.standardCharset(encoding))
+      )
   }
+
+  def parseUserTextInfoFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): UserTextInfoFrame =
+    parseTextInfoFrame(frameHeader).as[UserTextInfoFrame]
 
   def parseAttachedPictureFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): AttachedPictureFrame = {
     val encoding    = TextEncodings.identify(file.readByte())
