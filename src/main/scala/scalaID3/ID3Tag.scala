@@ -27,7 +27,7 @@ final class ID3Tag(private val filePath: String) extends ID3TagOps {
 
   val header: ID3Header = parseHeader()
 
-  private val framesWithPositions = FrameParser.traverseWholeFile(Map.empty.withDefaultValue(Nil))
+  private val framesWithPositions = FrameParser.traverseFile(Map.empty.withDefaultValue(Nil))
 
   //TODO: is it needed?
   def getFrames: Seq[Frame] = framesWithPositions.values.flatten.map(_.frame).toSeq
@@ -77,10 +77,6 @@ final class ID3Tag(private val filePath: String) extends ID3TagOps {
     )
   }
 
-  override def getPictureFrame(pictureType: PictureType = PictureTypes.FrontCover): Option[AttachedPictureFrame] =
-    framesWithPositions(FrameTypes.Picture.toString)
-      .collectFirst { case FrameWithPosition(frame: AttachedPictureFrame, _) if frame.pictureType == pictureType => frame }
-
   override def getPictureAsFile(path: String, pictureType: PictureType = PictureTypes.FrontCover): File = {
     val pictureFrame = getPictureFrame(pictureType).getOrElse(throw new Exception(s"Picture with type $pictureType not found"))
 
@@ -94,12 +90,15 @@ final class ID3Tag(private val filePath: String) extends ID3TagOps {
     image
   }
 
-  override def close(): Unit = file.close()
-
   override def getFrame(frameType: FrameType): Option[Frame] =
-    framesWithPositions(frameType.toString).headOption.map(_.frame)
+    framesWithPositions(frameType).headOption.map(_.frame)
 
   override def getTextInfoFrame(frameType: FrameType): Option[TextInfoFrame] =
-    framesWithPositions(frameType.toString).headOption
-      .map(_.frame.as[TextInfoFrame])
+    framesWithPositions(frameType).headOption.map(_.frame.as[TextInfoFrame])
+
+  override def getPictureFrame(pictureType: PictureType = PictureTypes.FrontCover): Option[AttachedPictureFrame] =
+    framesWithPositions(FrameTypes.Picture)
+      .collectFirst { case FrameWithPosition(frame: AttachedPictureFrame, _) if frame.pictureType == pictureType => frame }
+
+  override def close(): Unit = file.close()
 }

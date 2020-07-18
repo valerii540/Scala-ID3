@@ -41,6 +41,9 @@ object FrameTypes extends Enumeration {
   val ISRC: FrameType                = Value("TSRC") // 12 characters
   val EncoderWithSettings: FrameType = Value("TSSE") // ok
   val Year: FrameType                = Value("TYER") // always 4 characters
+  val UserDefinedText: FrameType     = Value("TXXX") // ok
 
   val Picture: FrameType = Value("APIC")
+
+  val Unknown: FrameType = Value("unknown")
 }
