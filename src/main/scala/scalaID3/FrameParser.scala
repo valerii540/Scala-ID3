@@ -7,7 +7,7 @@ import scalaID3.models.enums.FrameTypes.FrameType
 import scalaID3.models.enums.{FrameFlags, FrameTypes}
 import scalaID3.models.frames.AttachedPictureFrame.PictureTypes
 import scalaID3.models.frames.TextInfoFrame.TextEncodings
-import scalaID3.models.frames.{AttachedPictureFrame, TextInfoFrame, UserTextInfoFrame}
+import scalaID3.models.frames.{AttachedPictureFrame, CommentFrame, TextInfoFrame, UserTextInfoFrame}
 import scalaID3.models.{FrameHeader, FrameWithPosition, frames}
 
 import scala.annotation.tailrec
@@ -27,8 +27,11 @@ private[scalaID3] object FrameParser {
         case id if id.head == 'T' =>
           val frame = if (id(1) != 'X') parseTextInfoFrame(frameHeader) else parseUserTextInfoFrame(frameHeader)
           traverseFile(acc + (frameHeader.frameId -> (FrameWithPosition(frame, framePosition) +: acc(frameHeader.frameId))))
-        case id if id == "APIC" =>
+        case "APIC" =>
           val frame = parseAttachedPictureFrame(frameHeader)
+          traverseFile(acc + (frameHeader.frameId -> (FrameWithPosition(frame, framePosition) +: acc(frameHeader.frameId))))
+        case "COMM" =>
+          val frame = parseCommentFrame(frameHeader)
           traverseFile(acc + (frameHeader.frameId -> (FrameWithPosition(frame, framePosition) +: acc(frameHeader.frameId))))
         case x =>
           println(s"Unsupported frame ID type: $x")
@@ -95,6 +98,21 @@ private[scalaID3] object FrameParser {
 
   private def parseUserTextInfoFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): UserTextInfoFrame =
     parseTextInfoFrame(frameHeader).as[UserTextInfoFrame]
+
+  private def parseCommentFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): CommentFrame = {
+    val encoding         = TextEncodings.identify(file.readByte()).get
+    val language         = file.take(3).map(_.toChar).mkString
+    val descriptionBytes = file.takeWhile(_ != 0)
+    val commentBytes     = file.take(frameHeader.size - 4 - descriptionBytes.size)
+
+    CommentFrame(
+      frameHeader = frameHeader,
+      encoding = encoding,
+      language = language,
+      description = new String(descriptionBytes.toArray, TextEncodings.standardCharset(encoding)),
+      comment = new String(commentBytes.toArray, TextEncodings.standardCharset(encoding))
+    )
+  }
 
   private def parseAttachedPictureFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): AttachedPictureFrame = {
     val encoding    = TextEncodings.identify(file.readByte()).get
