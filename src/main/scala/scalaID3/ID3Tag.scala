@@ -6,17 +6,17 @@ import java.io.{ByteArrayInputStream, File, RandomAccessFile}
 import javax.imageio.ImageIO
 import scalaID3.Helper._
 import scalaID3.models._
-import scalaID3.models.enums.{ExtendedFlags, Flags, FrameTypes}
+import scalaID3.models.enums.{ExtendedFlags, Flags}
 import scalaID3.models.frames.AttachedPictureFrame.PictureTypes
 import scalaID3.models.frames.AttachedPictureFrame.PictureTypes.PictureType
-import scalaID3.models.enums.FrameTypes.FrameType
 import scalaID3.models.frames.{AttachedPictureFrame, Frame, TextInfoFrame}
+import scalaID3.models.types.{FrameType, PictureFrameType, TextInfoFrameType}
 
 import scala.util.{Failure, Try}
 
 sealed trait ID3TagOps {
   def getFrame(frameType: FrameType): Option[Frame]
-  def getTextInfoFrame(frameType: FrameType): Option[TextInfoFrame]
+  def getTextInfoFrame(frameType: TextInfoFrameType): Option[TextInfoFrame]
   def getPictureFrame(pictureType: PictureType): Option[AttachedPictureFrame]
   def getPictureAsFile(path: String, pictureType: PictureType): File
   def close(): Unit
@@ -93,11 +93,11 @@ final class ID3Tag(private val filePath: String) extends ID3TagOps {
   override def getFrame(frameType: FrameType): Option[Frame] =
     framesWithPositions(frameType).headOption.map(_.frame)
 
-  override def getTextInfoFrame(frameType: FrameType): Option[TextInfoFrame] =
+  override def getTextInfoFrame(frameType: TextInfoFrameType): Option[TextInfoFrame] =
     framesWithPositions(frameType).headOption.map(_.frame.as[TextInfoFrame])
 
   override def getPictureFrame(pictureType: PictureType = PictureTypes.FrontCover): Option[AttachedPictureFrame] =
-    framesWithPositions(FrameTypes.Picture)
+    framesWithPositions(PictureFrameType)
       .collectFirst { case FrameWithPosition(frame: AttachedPictureFrame, _) if frame.pictureType == pictureType => frame }
 
   override def close(): Unit = file.close()
