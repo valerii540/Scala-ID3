@@ -3,15 +3,16 @@ package scalaID3
 import java.io.RandomAccessFile
 
 import scalaID3.Helper._
-import scalaID3.models.enums.FrameTypes.FrameType
-import scalaID3.models.enums.{FrameFlags, FrameTypes}
+import scalaID3.data.AllFrameTypes
+import scalaID3.models.enums.FrameFlags
 import scalaID3.models.frames.AttachedPictureFrame.PictureTypes
 import scalaID3.models.frames.TextInfoFrame.TextEncodings
 import scalaID3.models.frames.{AttachedPictureFrame, CommentFrame, TextInfoFrame, UserTextInfoFrame}
+import scalaID3.models.types.TextInfoFrameTypes.UserDefinedText
+import scalaID3.models.types._
 import scalaID3.models.{FrameHeader, FrameWithPosition, frames}
 
 import scala.annotation.tailrec
-import scala.util.{Failure, Success, Try}
 
 private[scalaID3] object FrameParser {
 
@@ -19,36 +20,36 @@ private[scalaID3] object FrameParser {
   def traverseFile(acc: Map[FrameType, Seq[FrameWithPosition]])(implicit file: RandomAccessFile): Map[FrameType, Seq[FrameWithPosition]] = {
     val framePosition = file.getFilePointer
 
-    val frameHeaderOrNot = parseFrameHeader()
+    val frameHeader = parseFrameHeader()
 
-    if (frameHeaderOrNot.isRight) {
-      val frameHeader = frameHeaderOrNot.right.get
-      frameHeader.frameId.toString match {
-        case id if id.head == 'T' =>
-          val frame = if (id(1) != 'X') parseTextInfoFrame(frameHeader) else parseUserTextInfoFrame(frameHeader)
-          traverseFile(acc + (frameHeader.frameId -> (FrameWithPosition(frame, framePosition) +: acc(frameHeader.frameId))))
-        case "APIC" =>
-          val frame = parseAttachedPictureFrame(frameHeader)
-          traverseFile(acc + (frameHeader.frameId -> (FrameWithPosition(frame, framePosition) +: acc(frameHeader.frameId))))
-        case "COMM" =>
-          val frame = parseCommentFrame(frameHeader)
-          traverseFile(acc + (frameHeader.frameId -> (FrameWithPosition(frame, framePosition) +: acc(frameHeader.frameId))))
-        case x =>
-          println(s"Unsupported frame ID type: $x")
-          acc
-      }
-    } else {
-      println(s"Unknown frame ID type: ${frameHeaderOrNot.left.get}")
-      acc
+    frameHeader.frameType match {
+      case t: TextInfoFrameType =>
+        val frame = if (t.id != UserDefinedText.id) parseTextInfoFrame(frameHeader) else parseUserTextInfoFrame(frameHeader)
+        traverseFile(acc + (frameHeader.frameType -> (FrameWithPosition(frame, framePosition) +: acc(frameHeader.frameType))))
+
+      case PictureFrameType =>
+        val frame = parseAttachedPictureFrame(frameHeader)
+        traverseFile(acc + (frameHeader.frameType -> (FrameWithPosition(frame, framePosition) +: acc(frameHeader.frameType))))
+
+      case CommentFrameType =>
+        val frame = parseCommentFrame(frameHeader)
+        traverseFile(acc + (frameHeader.frameType -> (FrameWithPosition(frame, framePosition) +: acc(frameHeader.frameType))))
+
+      case Unknown(id) =>
+        println(s"Unsupported frame ID type: $id")
+        acc
     }
 
   }
 
-  private def parseFrameHeader()(implicit file: RandomAccessFile): Either[String, FrameHeader] = {
+  private def parseFrameHeader()(implicit file: RandomAccessFile): FrameHeader = {
     val frameID = file.take(4).map(_.toChar).mkString
 
-    Try(FrameTypes.withName(frameID)) match {
-      case Success(id) =>
+    AllFrameTypes.matchFrameType(frameID) match {
+      case unknown @ Unknown(_) =>
+        FrameHeader(unknown, 0, Set(), None, None, None)
+
+      case frameType: FrameType =>
         val frameSize       = file.readInt()
         val frameFlagsBytes = file.take(2)
 
@@ -61,21 +62,20 @@ private[scalaID3] object FrameParser {
           Option.when((1 << 5 & frameFlagsBytes(1)) != 0)(FrameFlags.GroupingIdentity)
         ).flatten
 
-        Right(
-          FrameHeader(
-            frameId = id,
-            size = frameSize,
-            flags = flags,
-            decompressedSize = Option.when(flags.contains(FrameFlags.Compression))(file.readInt()),
-            encryption = Option.when(flags.contains(FrameFlags.Encryption))(file.readByte()),
-            group = Option.when(flags.contains(FrameFlags.GroupingIdentity))(file.readByte())
-          ))
-      case Failure(_) => Left(frameID)
+        FrameHeader(
+          frameType = frameType,
+          size = frameSize,
+          flags = flags,
+          decompressedSize = Option.when(flags.contains(FrameFlags.Compression))(file.readInt()),
+          encryption = Option.when(flags.contains(FrameFlags.Encryption))(file.readByte()),
+          group = Option.when(flags.contains(FrameFlags.GroupingIdentity))(file.readByte())
+        )
+
     }
   }
 
   private def parseTextInfoFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): TextInfoFrame = {
-    val isUserDefined = frameHeader.frameId.toString.startsWith("TX")
+    val isUserDefined = frameHeader.frameType.toString.startsWith("TX")
 
     val encoding         = TextEncodings.identify(file.readByte()).get
     val descriptionBytes = Option.when(isUserDefined)(file.takeWhile(_ != 0))
