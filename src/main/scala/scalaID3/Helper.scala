@@ -8,6 +8,7 @@ import scala.collection.mutable
 object Helper {
   val removeExtensionRegex = "[.][^.]+$"
 
+  //TODO: remove as unused
   implicit class IteratorExt(val array: Iterator[Byte]) {
     def toByteBuffer: ByteBuffer = ByteBuffer.wrap(array.toArray)
   }
