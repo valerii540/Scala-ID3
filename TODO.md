@@ -4,16 +4,22 @@
 - [ ] Frames type safety
 - [ ] High level, functional API - no dealing with byte arrays
 - [ ] ID3 tag validation
-### ID3v1
+## ID3v1
 ...
-### ID3v2
-#### Tag reading support
+## ID3v2
+### Tag reading support
 - [ ] All standard frames as case classes
 - [x] Image frame materializing
 - [ ] ID3 frames validation  
 ...
-#### Tag writing support
+### Tag writing support
 - [ ] Frame adding/removing
 - [ ] Frame rewriting
 - [ ] Text frames encoding fixing  
 ...
+## Misc
+- File traversing efficiency research
+# Code hygiene
+- Unit tests
+- Strict null safety
+- Custom exceptions
