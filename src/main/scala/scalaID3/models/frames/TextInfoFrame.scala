@@ -19,8 +19,8 @@ final class UserTextInfoFrame(override val frameHeader: FrameHeader,
 object TextInfoFrame {
   object TextEncodings extends Enumeration {
     type Encoding = Value
-    val `ISO-8859-1`: Value = Value("ISO-8859-1")
-    val Unicode: Value      = Value("UTF-16")
+    val `ISO-8859-1`: Encoding = Value("ISO-8859-1")
+    val Unicode: Encoding      = Value("UTF-16")
 
     def identify(byte: Byte): Try[Encoding] =
       Try(byte match {

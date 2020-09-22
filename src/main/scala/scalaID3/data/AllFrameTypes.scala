@@ -4,8 +4,9 @@ import scalaID3.models.types.{CommentFrameType, FrameType, PictureFrameType, Tex
 
 object AllFrameTypes {
   def matchFrameType(id: String): FrameType =
-    TextInfoFrameTypes(id)
-    .orElse(Option.when(id == PictureFrameType.id)(PictureFrameType))
-    .orElse(Option.when(id == CommentFrameType.id)(CommentFrameType))
-    .getOrElse(Unknown(id))
+    TextInfoFrameTypes
+      .get(id)
+      .orElse(Option.when(id == PictureFrameType.id)(PictureFrameType))
+      .orElse(Option.when(id == CommentFrameType.id)(CommentFrameType))
+      .getOrElse(Unknown(id))
 }

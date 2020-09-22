@@ -1,5 +1,8 @@
 package scalaID3.models.types
 
+import scala.reflect.runtime
+import scala.reflect.runtime.universe.ModuleSymbol
+
 sealed trait TextInfoFrameType extends FrameType
 
 object TextInfoFrameTypes {
@@ -43,47 +46,17 @@ object TextInfoFrameTypes {
   case object Year                extends TextInfoFrameType { val id = "TYER" } // always 4 characters
   case object UserDefinedText     extends TextInfoFrameType { val id = "TXXX" } // ok
 
-  private val list = Seq(
-    Album,
-    Bpm,
-    Composers,
-    ContentType,
-    Copyright,
-    Date,
-    Delay,
-    EncodedBy,
-    Writers,
-    AudioType,
-    Time,
-    ContentGroup,
-    Title,
-    Subtitle,
-    InitialKey,
-    Languages,
-    Length,
-    MediaType,
-    OriginalAlbum,
-    OriginalFilename,
-    OriginalWriters,
-    OriginalArtists,
-    OriginalReleaseDate,
-    FileOwner,
-    Leaders,
-    Band,
-    Conductor,
-    ModifiedBy,
-    PartOfSet,
-    Publisher,
-    TrackNumber,
-    RecordingDates,
-    InternetRadio,
-    InternetRadioOwner,
-    AudioSize,
-    ISRC,
-    EncoderWithSettings,
-    Year,
-    UserDefinedText
-  )
+  private val types = {
+    val mirror = runtime.currentMirror
 
-  def apply(id: String): Option[TextInfoFrameType] = list.find(_.id == id)
+    mirror
+      .classSymbol(TextInfoFrameTypes.getClass)
+      .info
+      .members
+      .collect {
+        case module: ModuleSymbol => mirror.reflectModule(module.asModule).instance.asInstanceOf[TextInfoFrameType]
+      }
+  }
+
+  def get(id: String): Option[TextInfoFrameType] = types.find(_.id == id)
 }

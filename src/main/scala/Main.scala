@@ -34,10 +34,6 @@ object Main extends App {
                |----------------------
                |""".stripMargin)
       }
-
-
-
-
     }
   }
 }
