@@ -24,7 +24,7 @@ object Main extends App {
                |----------------------
                |""".stripMargin)
           id3tag.close()
-        case Failure(exception) =>
+        case Failure(exception: AssertionError)  =>
           println(
             s"""
                |# ${fileAndIndex._2 + 1}
@@ -33,6 +33,14 @@ object Main extends App {
                |EXCEPTION: ${exception.getMessage}
                |----------------------
                |""".stripMargin)
+        case Failure(exception) =>
+          println(
+            s"""
+               |# ${fileAndIndex._2 + 1}
+               |song: ${fileAndIndex._1.getName}
+               |----------------------
+               |""".stripMargin)
+          throw exception
       }
     }
   }

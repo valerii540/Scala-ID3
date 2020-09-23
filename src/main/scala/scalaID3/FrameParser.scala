@@ -2,15 +2,14 @@ package scalaID3
 
 import java.io.RandomAccessFile
 
-import scalaID3.Helper._
 import scalaID3.data.AllFrameTypes
 import scalaID3.models.enums.FrameFlags
 import scalaID3.models.frames.AttachedPictureFrame.PictureTypes
-import scalaID3.models.frames.TextInfoFrame.TextEncodings
-import scalaID3.models.frames.{AttachedPictureFrame, CommentFrame, TextInfoFrame, UserTextInfoFrame}
-import scalaID3.models.types.TextInfoFrameTypes.UserDefinedText
+import scalaID3.models.frames._
 import scalaID3.models.types._
 import scalaID3.models.{FrameHeader, FrameWithPosition, frames}
+import scalaID3.utils.EncodingHelper
+import scalaID3.utils.Helper._
 
 import scala.annotation.tailrec
 
@@ -24,7 +23,7 @@ private[scalaID3] object FrameParser {
 
     frameHeader.frameType match {
       case t: TextInfoFrameType =>
-        val frame = if (t.id != UserDefinedText.id) parseTextInfoFrame(frameHeader) else parseUserTextInfoFrame(frameHeader)
+        val frame = parseTextInfoFrame(frameHeader)
         traverseFile(acc + (frameHeader.frameType -> (FrameWithPosition(frame, framePosition) +: acc(frameHeader.frameType))))
 
       case PictureFrameType =>
@@ -75,32 +74,33 @@ private[scalaID3] object FrameParser {
   }
 
   private def parseTextInfoFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): TextInfoFrame = {
-    val isUserDefined = frameHeader.frameType.toString.startsWith("TX")
+    val encoding = EncodingHelper.identify(file.readByte()).get
 
-    val encoding         = TextEncodings.identify(file.readByte()).get
-    val descriptionBytes = Option.when(isUserDefined)(file.takeWhile(_ != 0))
-    val informationBytes = file.take(frameHeader.size - descriptionBytes.map(_.length + 1).getOrElse(0) - 1)
+    frameHeader.frameType match {
+      case TextInfoFrameTypes.UserDefinedText =>
+        val descriptionBytes = file.takeWhile(_ != 0)
+        val informationBytes = file.take(frameHeader.size - descriptionBytes.length)
 
-    if (isUserDefined)
-      new UserTextInfoFrame(
-        frameHeader = frameHeader,
-        encoding = encoding,
-        description = descriptionBytes.map(s => new String(s.toArray, TextEncodings.standardCharset(encoding))),
-        value = new String(informationBytes.toArray, TextEncodings.standardCharset(encoding))
-      )
-    else
-      TextInfoFrame(
-        frameHeader = frameHeader,
-        encoding = encoding,
-        value = new String(informationBytes.toArray, TextEncodings.standardCharset(encoding))
-      )
+        UserTextInfoFrame(
+          frameHeader = frameHeader,
+          encoding = encoding,
+          description = new String(descriptionBytes.toArray, EncodingHelper.standardCharset(encoding)),
+          value = new String(informationBytes.toArray, EncodingHelper.standardCharset(encoding))
+        )
+
+      case _ =>
+        val informationBytes = file.take(frameHeader.size - 1)
+
+        StandardTextInfoFrame(
+          frameHeader = frameHeader,
+          encoding = encoding,
+          value = new String(informationBytes.toArray, EncodingHelper.standardCharset(encoding))
+        )
+    }
   }
 
-  private def parseUserTextInfoFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): UserTextInfoFrame =
-    parseTextInfoFrame(frameHeader).as[UserTextInfoFrame]
-
   private def parseCommentFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): CommentFrame = {
-    val encoding         = TextEncodings.identify(file.readByte()).get
+    val encoding         = EncodingHelper.identify(file.readByte()).get
     val language         = file.take(3).map(_.toChar).mkString
     val descriptionBytes = file.takeWhile(_ != 0)
     val commentBytes     = file.take(frameHeader.size - 4 - descriptionBytes.size)
@@ -109,13 +109,13 @@ private[scalaID3] object FrameParser {
       frameHeader = frameHeader,
       encoding = encoding,
       language = language,
-      description = new String(descriptionBytes.toArray, TextEncodings.standardCharset(encoding)),
-      comment = new String(commentBytes.toArray, TextEncodings.standardCharset(encoding))
+      description = new String(descriptionBytes.toArray, EncodingHelper.standardCharset(encoding)),
+      comment = new String(commentBytes.toArray, EncodingHelper.standardCharset(encoding))
     )
   }
 
   private def parseAttachedPictureFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): AttachedPictureFrame = {
-    val encoding    = TextEncodings.identify(file.readByte()).get
+    val encoding    = EncodingHelper.identify(file.readByte()).get
     val mimeType    = file.takeWhile(_ != 0)
     val pictureType = file.readByte()
     val description = file.takeWhile(_ != 0)
@@ -126,9 +126,8 @@ private[scalaID3] object FrameParser {
       textEncoding = encoding,
       mimeType = mimeType.map(_.toChar).mkString,
       pictureType = PictureTypes(pictureType),
-      description = new String(description.toArray, TextEncodings.standardCharset(encoding)),
+      description = new String(description.toArray, EncodingHelper.standardCharset(encoding)),
       pictureData = pictureData
     )
   }
-
 }
