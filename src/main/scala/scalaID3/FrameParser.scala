@@ -35,7 +35,7 @@ private[scalaID3] object FrameParser {
         traverseFile(acc + (frameHeader.frameType -> (FrameWithPosition(frame, framePosition) +: acc(frameHeader.frameType))))
 
       case Unknown(id) =>
-        println(s"Unsupported frame ID type: $id")
+        println(s"From ${framePosition} unsupported frame ID type: $id")
         acc
     }
 
