@@ -10,7 +10,7 @@
 ### Tag reading support
 - [ ] All standard frames as case classes
   - ...
-  - [ ] **MCDI** - 
+  - [x] **MCDI** - Music CD identifier
   - [x] **PRIV** - Private frame 
   - [x] **APIC** - Attached picture frame
   - [x] **COMM** - Comment frame
