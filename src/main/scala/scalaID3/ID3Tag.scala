@@ -94,7 +94,7 @@ final class ID3Tag(private val filePath: String) extends ID3TagOps {
     framesWithPositions(frameType).headOption.map(_.frame)
 
   override def getTextInfoFrame(frameType: TextInfoFrameType): Option[StandardTextInfoFrame] =
-    framesWithPositions(frameType).headOption.map(_.frame.as[StandardTextInfoFrame])
+    framesWithPositions(frameType).headOption.map(_.frame.asInstanceOf[StandardTextInfoFrame])
 
   override def getPictureFrame(pictureType: PictureType = PictureTypes.FrontCover): Option[AttachedPictureFrame] =
     framesWithPositions(PictureFrameType)
