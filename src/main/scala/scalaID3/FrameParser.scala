@@ -91,7 +91,7 @@ private[scalaID3] object FrameParser {
     frameHeader.frameType match {
       case TextInfoFrameTypes.UserDefinedText =>
         val descriptionBytes = file.takeWhile(_ != 0)
-        val informationBytes = file.take(frameHeader.size - descriptionBytes.length)
+        val informationBytes = file.take(frameHeader.size - descriptionBytes.length - 2)
 
         UserTextInfoFrame(
           frameHeader = frameHeader,
@@ -162,7 +162,7 @@ private[scalaID3] object FrameParser {
     val mimeType    = file.takeWhile(_ != 0)
     val pictureType = file.readByte()
     val description = file.takeWhile(_ != 0)
-    val pictureData = file.take(frameHeader.size - mimeType.length - description.length - 2).toArray
+    val pictureData = file.take(frameHeader.size - mimeType.size - description.size - 4).toArray
 
     AttachedPictureFrame(
       frameHeader = frameHeader,
