@@ -7,7 +7,7 @@ import scalaID3.models.enums.FrameFlags
 import scalaID3.models.frames.AttachedPictureFrame.PictureTypes
 import scalaID3.models.frames._
 import scalaID3.models.types._
-import scalaID3.models.{FrameHeader, FrameWithPosition, frames}
+import scalaID3.models.{FrameHeader, FrameWithPosition}
 import scalaID3.utils.EncodingHelper
 import scalaID3.utils.Helper._
 
@@ -40,6 +40,10 @@ private[scalaID3] object FrameParser {
 
       case MusicCDidFrameType =>
         val frame = parseMusicCDidFrame(frameHeader)
+        traverseFile(acc + (frameHeader.frameType -> (FrameWithPosition(frame, framePosition) +: acc(frameHeader.frameType))))
+
+      case PopularimeterFrameType =>
+        val frame = parsePopularimeterFrame(frameHeader)
         traverseFile(acc + (frameHeader.frameType -> (FrameWithPosition(frame, framePosition) +: acc(frameHeader.frameType))))
 
       case Unknown(id) =>
@@ -124,19 +128,33 @@ private[scalaID3] object FrameParser {
 
   private def parsePrivateFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): PrivateFrame = {
     val ownerIdBytes = file.takeWhile(_ != 0)
-    val privateData = file.take(frameHeader.size - ownerIdBytes.size - 1)
+    val privateData  = file.take(frameHeader.size - ownerIdBytes.size - 1)
 
     PrivateFrame(
-      frameHeader,
-      ownerIdBytes.map(_.toChar).mkString,
-      privateData.toArray
+      frameHeader = frameHeader,
+      ownerId = ownerIdBytes.map(_.toChar).mkString,
+      privateData = privateData.toArray
     )
   }
 
   private def parseMusicCDidFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): MusicCDidFrame = {
     val CDTableOfContents = file.take(frameHeader.size)
 
-    MusicCDidFrame(frameHeader, CDTableOfContents.toArray)
+    MusicCDidFrame(frameHeader = frameHeader, CDTableOfContents = CDTableOfContents.toArray)
+  }
+
+  private def parsePopularimeterFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): PopularimeterFrame = {
+    val emailBytes = file.takeWhile(_ != 0)
+    val rating     = 0xFF & file.readByte() // Make "unsigned" int from signed byte
+
+    val counterSize = frameHeader.size - emailBytes.size - 4 - 1
+
+    PopularimeterFrame(
+      frameHeader = frameHeader,
+      email = emailBytes.map(_.toChar).mkString,
+      rating = rating,
+      counter = Option.when(counterSize > 0)(BigInt(file.take(counterSize).toArray))
+    )
   }
 
   private def parseAttachedPictureFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): AttachedPictureFrame = {
@@ -146,7 +164,7 @@ private[scalaID3] object FrameParser {
     val description = file.takeWhile(_ != 0)
     val pictureData = file.take(frameHeader.size - mimeType.length - description.length - 2).toArray
 
-    frames.AttachedPictureFrame(
+    AttachedPictureFrame(
       frameHeader = frameHeader,
       textEncoding = encoding,
       mimeType = mimeType.map(_.toChar).mkString,
