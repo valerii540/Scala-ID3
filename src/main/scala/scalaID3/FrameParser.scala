@@ -111,7 +111,7 @@ private[scalaID3] object FrameParser {
     val encoding         = EncodingHelper.identify(file.readByte()).get
     val language         = file.take(3).map(_.toChar).mkString
     val descriptionBytes = file.takeWhile(_ != 0)
-    val commentBytes     = file.take(frameHeader.size - 4 - descriptionBytes.size)
+    val commentBytes     = file.take(frameHeader.size - 4 - descriptionBytes.size - 1)
 
     CommentFrame(
       frameHeader = frameHeader,
