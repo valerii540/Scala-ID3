@@ -38,6 +38,10 @@ private[scalaID3] object FrameParser {
         val frame = parsePrivateFrame(frameHeader)
         traverseFile(acc + (frameHeader.frameType -> (FrameWithPosition(frame, framePosition) +: acc(frameHeader.frameType))))
 
+      case MusicCDidFrameType =>
+        val frame = parseMusicCDidFrame(frameHeader)
+        traverseFile(acc + (frameHeader.frameType -> (FrameWithPosition(frame, framePosition) +: acc(frameHeader.frameType))))
+
       case Unknown(id) =>
         println(s"From ${framePosition} unsupported frame ID type: $id")
         acc
@@ -127,6 +131,12 @@ private[scalaID3] object FrameParser {
       ownerIdBytes.map(_.toChar).mkString,
       privateData.toArray
     )
+  }
+
+  private def parseMusicCDidFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): MusicCDidFrame = {
+    val CDTableOfContents = file.take(frameHeader.size)
+
+    MusicCDidFrame(frameHeader, CDTableOfContents.toArray)
   }
 
   private def parseAttachedPictureFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): AttachedPictureFrame = {
