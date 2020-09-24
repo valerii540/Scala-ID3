@@ -12,13 +12,13 @@ import scalaID3.models.frames.{AttachedPictureFrame, Frame, StandardTextInfoFram
 import scalaID3.models.types.{FrameType, PictureFrameType, TextInfoFrameType}
 import scalaID3.utils.Helper._
 
-import scala.util.{Failure, Try}
+import scala.util.{Failure, Success, Try}
 
 sealed trait ID3TagOps {
   def getFrame(frameType: FrameType): Option[Frame]
   def getTextInfoFrame(frameType: TextInfoFrameType): Option[StandardTextInfoFrame]
   def getPictureFrame(pictureType: PictureType): Option[AttachedPictureFrame]
-  def getPictureAsFile(path: String, pictureType: PictureType): File
+  def savePictureAs(path: String, pictureType: PictureType): Try[File]
   def close(): Unit
 }
 
@@ -77,18 +77,20 @@ final class ID3Tag(private val filePath: String) extends ID3TagOps {
     )
   }
 
-  override def getPictureAsFile(path: String, pictureType: PictureType = PictureTypes.FrontCover): File = {
-    val pictureFrame = getPictureFrame(pictureType).getOrElse(throw new Exception(s"Picture with type $pictureType not found"))
+  override def savePictureAs(path: String, pictureType: PictureType = PictureTypes.FrontCover): Try[File] =
+    Try(getPictureFrame(pictureType).get).transform(
+      pictureFrame => {
+        val mimeType = pictureFrame.mimeType.split("/").last
 
-    val mimeType = pictureFrame.mimeType.split("/").last
+        assert(mimeType != "image", "Missing picture type in the frame")
 
-    assert(mimeType != "image", "Missing picture type in the frame")
-
-    val bi: BufferedImage = ImageIO.read(new ByteArrayInputStream(pictureFrame.pictureData))
-    val image             = new File(path.replaceFirst(removeExtensionRegex, "") + "." + mimeType)
-    ImageIO.write(bi, mimeType, image)
-    image
-  }
+        val bi: BufferedImage = ImageIO.read(new ByteArrayInputStream(pictureFrame.pictureData))
+        val image             = new File(path.replaceFirst(removeExtensionRegex, "") + "." + mimeType)
+        ImageIO.write(bi, mimeType, image)
+        Success(image)
+      },
+      exception => Failure(exception)
+    )
 
   override def getFrame(frameType: FrameType): Option[Frame] =
     framesWithPositions(frameType).headOption.map(_.frame)
