@@ -10,50 +10,51 @@
 ### Tag reading support
 - [ ] All standard frames as case classes
   - ...
+  - [ ] **MCDI** - 
   - [x] **PRIV** - Private frame 
-  - [x] **TDRC** - Recording timestamp frame
   - [x] **APIC** - Attached picture frame
   - [x] **COMM** - Comment frame
   - [x] Text info frames
     - [x] **TALB** - Album              
     - [x] **TBPM** - Bpm                
     - [x] **TCOM** - Composers          
-    - [x] **TCON** - ContentType        
+    - [x] **TCON** - Content type        
     - [x] **TCOP** - Copyright          
     - [x] **TDAT** - Date               
     - [x] **TDLY** - Delay              
-    - [x] **TENC** - EncodedBy          
+    - [x] **TENC** - Encoded by          
     - [x] **TEXT** - Writers            
-    - [x] **TFLT** - AudioType          
+    - [x] **TFLT** - Audio type          
     - [x] **TIME** - Time               
-    - [x] **TIT1** - ContentGroup       
+    - [x] **TIT1** - Content group       
     - [x] **TIT2** - Title              
     - [x] **TIT3** - Subtitle           
-    - [x] **TKEY** - InitialKey         
+    - [x] **TKEY** - Initial key         
     - [x] **TLAN** - Languages          
     - [x] **TLEN** - Length             
-    - [x] **TMED** - MediaType          
-    - [x] **TOAL** - OriginalAlbum      
-    - [x] **TOFN** - OriginalFilename   
-    - [x] **TOLY** - OriginalWriters    
-    - [x] **TOPE** - OriginalArtists    
-    - [x] **TORY** - OriginalReleaseDate
-    - [x] **TOWN** - FileOwner          
+    - [x] **TMED** - Media type          
+    - [x] **TOAL** - Original album      
+    - [x] **TOFN** - Original filename   
+    - [x] **TOLY** - Original writers    
+    - [x] **TOPE** - Original artists    
+    - [x] **TORY** - Original release date
+    - [x] **TOWN** - File owner          
     - [x] **TPE1** - Leaders            
     - [x] **TPE2** - Band               
     - [x] **TPE3** - Conductor          
-    - [x] **TPE4** - ModifiedBy         
-    - [x] **TPOS** - PartOfSet          
+    - [x] **TPE4** - Modified by         
+    - [x] **TPOS** - Part of set          
     - [x] **TPUB** - Publisher          
-    - [x] **TRCK** - TrackNumber        
-    - [x] **TRDA** - RecordingDates     
-    - [x] **TRSN** - InternetRadio      
-    - [x] **TRSO** - InternetRadioOwner 
-    - [x] **TSIZ** - AudioSize          
+    - [x] **TRCK** - Track number        
+    - [x] **TRDA** - Recording dates     
+    - [x] **TRSN** - Internet radio      
+    - [x] **TRSO** - Internet radio owner 
+    - [x] **TSIZ** - Audio size          
     - [x] **TSRC** - ISRC               
-    - [x] **TSSE** - EncoderWithSettings
+    - [x] **TSSE** - Encoder with settings
     - [x] **TYER** - Year               
-    - [x] **TXXX** - UserDefinedText    
+    - [x] **TXXX** - User defined text
+    - [x] **TDRC** - Recording timestamp    
 - [x] Image frame materializing
 - [ ] ID3 frames validation  
 ...
