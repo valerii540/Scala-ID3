@@ -22,7 +22,7 @@ private[scalaID3] object FrameParser {
     val frameHeader = parseFrameHeader()
 
     frameHeader.frameType match {
-      case t: TextInfoFrameType =>
+      case _: TextInfoFrameType =>
         val frame = parseTextInfoFrame(frameHeader)
         traverseFile(acc + (frameHeader.frameType -> (FrameWithPosition(frame, framePosition) +: acc(frameHeader.frameType))))
 
@@ -32,6 +32,10 @@ private[scalaID3] object FrameParser {
 
       case CommentFrameType =>
         val frame = parseCommentFrame(frameHeader)
+        traverseFile(acc + (frameHeader.frameType -> (FrameWithPosition(frame, framePosition) +: acc(frameHeader.frameType))))
+
+      case PrivateFrameType =>
+        val frame = parsePrivateFrame(frameHeader)
         traverseFile(acc + (frameHeader.frameType -> (FrameWithPosition(frame, framePosition) +: acc(frameHeader.frameType))))
 
       case Unknown(id) =>
@@ -111,6 +115,17 @@ private[scalaID3] object FrameParser {
       language = language,
       description = new String(descriptionBytes.toArray, EncodingHelper.standardCharset(encoding)),
       comment = new String(commentBytes.toArray, EncodingHelper.standardCharset(encoding))
+    )
+  }
+
+  private def parsePrivateFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): PrivateFrame = {
+    val ownerIdBytes = file.takeWhile(_ != 0)
+    val privateData = file.take(frameHeader.size - ownerIdBytes.size - 1)
+
+    PrivateFrame(
+      frameHeader,
+      ownerIdBytes.map(_.toChar).mkString,
+      privateData.toArray
     )
   }
 

@@ -10,7 +10,8 @@
 ### Tag reading support
 - [ ] All standard frames as case classes
   - ...
-  - [ ] **TDRC** - Recording timestamp
+  - [x] **PRIV** - Private frame 
+  - [x] **TDRC** - Recording timestamp frame
   - [x] **APIC** - Attached picture frame
   - [x] **COMM** - Comment frame
   - [x] Text info frames

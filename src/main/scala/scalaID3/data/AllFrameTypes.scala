@@ -1,6 +1,6 @@
 package scalaID3.data
 
-import scalaID3.models.types.{CommentFrameType, FrameType, PictureFrameType, TextInfoFrameTypes, Unknown}
+import scalaID3.models.types._
 
 object AllFrameTypes {
   def matchFrameType(id: String): FrameType =
@@ -8,5 +8,6 @@ object AllFrameTypes {
       .get(id)
       .orElse(Option.when(id == PictureFrameType.id)(PictureFrameType))
       .orElse(Option.when(id == CommentFrameType.id)(CommentFrameType))
+      .orElse(Option.when(id == PrivateFrameType.id)(PrivateFrameType))
       .getOrElse(Unknown(id))
 }
