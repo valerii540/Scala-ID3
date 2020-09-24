@@ -9,6 +9,6 @@ sealed trait TextInfoFrame extends Frame {
   val value: String
 }
 
-sealed case class StandardTextInfoFrame(frameHeader: FrameHeader, encoding: Encoding, value: String) extends TextInfoFrame
+final case class StandardTextInfoFrame(frameHeader: FrameHeader, encoding: Encoding, value: String) extends TextInfoFrame
 
-sealed case class UserTextInfoFrame(frameHeader: FrameHeader, encoding: Encoding, value: String, description: String) extends TextInfoFrame
+final case class UserTextInfoFrame(frameHeader: FrameHeader, encoding: Encoding, value: String, description: String) extends TextInfoFrame
