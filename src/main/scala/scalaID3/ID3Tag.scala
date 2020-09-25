@@ -6,9 +6,10 @@ import java.io.{ByteArrayInputStream, File, RandomAccessFile}
 import javax.imageio.ImageIO
 import scalaID3.models._
 import scalaID3.models.enums.{ExtendedFlags, Flags}
-import scalaID3.models.frames.AttachedPictureFrame.PictureTypes
-import scalaID3.models.frames.AttachedPictureFrame.PictureTypes.PictureType
-import scalaID3.models.frames.{AttachedPictureFrame, Frame, StandardTextInfoFrame}
+import scalaID3.models.frames.Frame
+import scalaID3.models.frames.standard.AttachedPictureFrame.PictureTypes
+import scalaID3.models.frames.standard.AttachedPictureFrame.PictureTypes.PictureType
+import scalaID3.models.frames.standard.{AttachedPictureFrame, StandardTextInfoFrame}
 import scalaID3.models.types.{FrameType, PictureFrameType, TextInfoFrameType}
 import scalaID3.utils.Helper._
 
