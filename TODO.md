@@ -15,7 +15,7 @@
   - [x] **PRIV** - Private frame 
   - [x] **APIC** - Attached picture frame
   - [x] **COMM** - Comment frame
-  - [x] Text info frames
+  - [ ] Text info frames
     - [x] **TALB** - Album              
     - [x] **TBPM** - Bpm                
     - [x] **TCOM** - Composers          
@@ -56,6 +56,7 @@
     - [x] **TYER** - Year               
     - [x] **TXXX** - User defined text
     - [x] **TDRC** - Recording timestamp
+    - [x] **TDTG** - Tagging timestamp
 - Non-standard frames
   - [x] **NCON** - frame added by MusicMatch
 - [x] Image frame materializing

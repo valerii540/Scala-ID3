@@ -46,6 +46,7 @@ object TextInfoFrameTypes {
   case object Year                extends TextInfoFrameType { val id = "TYER" } // always 4 characters
   case object UserDefinedText     extends TextInfoFrameType { val id = "TXXX" } // ok
   case object RecordingTimestamp  extends TextInfoFrameType { val id = "TDRC" } // subset of ISO 8601
+  case object TaggingTime         extends TextInfoFrameType { val id = "TDTG" } // subset of ISO 8601
 
   private val types = {
     val mirror = runtime.currentMirror
