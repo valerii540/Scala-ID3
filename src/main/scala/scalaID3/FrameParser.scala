@@ -4,8 +4,9 @@ import java.io.RandomAccessFile
 
 import scalaID3.data.AllFrameTypes
 import scalaID3.models.enums.FrameFlags
-import scalaID3.models.frames.AttachedPictureFrame.PictureTypes
-import scalaID3.models.frames._
+import scalaID3.models.frames.nonstandard.NCONFrame
+import scalaID3.models.frames.standard.AttachedPictureFrame.PictureTypes
+import scalaID3.models.frames.standard._
 import scalaID3.models.types._
 import scalaID3.models.{FrameHeader, FrameWithPosition}
 import scalaID3.utils.EncodingHelper
@@ -44,6 +45,10 @@ private[scalaID3] object FrameParser {
 
       case PopularimeterFrameType =>
         val frame = parsePopularimeterFrame(frameHeader)
+        traverseFile(acc + (frameHeader.frameType -> (FrameWithPosition(frame, framePosition) +: acc(frameHeader.frameType))))
+
+      case NCONFrameType =>
+        val frame = parseNCONFrame(frameHeader)
         traverseFile(acc + (frameHeader.frameType -> (FrameWithPosition(frame, framePosition) +: acc(frameHeader.frameType))))
 
       case Unknown(id) =>
@@ -172,5 +177,11 @@ private[scalaID3] object FrameParser {
       description = new String(description.toArray, EncodingHelper.standardCharset(encoding)),
       pictureData = pictureData
     )
+  }
+
+  private def parseNCONFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): NCONFrame = {
+    val data = file.take(frameHeader.size)
+
+    NCONFrame(frameHeader = frameHeader, data = data.toArray)
   }
 }

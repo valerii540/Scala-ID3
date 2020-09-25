@@ -8,8 +8,9 @@
 ...
 ## ID3v2
 ### Tag reading support
-- [ ] All standard frames as case classes
+- [ ] Standard frames
   - ...
+  - [x] **POPM** - Popularimeter frame
   - [x] **MCDI** - Music CD identifier
   - [x] **PRIV** - Private frame 
   - [x] **APIC** - Attached picture frame
@@ -54,15 +55,18 @@
     - [x] **TSSE** - Encoder with settings
     - [x] **TYER** - Year               
     - [x] **TXXX** - User defined text
-    - [x] **TDRC** - Recording timestamp    
+    - [x] **TDRC** - Recording timestamp
+- Non-standard frames
+  - [x] **NCON** - frame added by MusicMatch
 - [x] Image frame materializing
-- [ ] ID3 frames validation  
-...
-### Tag writing support
+- [ ] ID3 frames validation
+- ...
+### Tag editing support
 - [ ] Frame adding/removing
 - [ ] Frame rewriting
-- [ ] Text frames encoding fixing  
-...
+- [ ] Text frames encoding fixing
+- [ ] Non-standard frames removing
+- ...
 ## Misc
 - File traversing efficiency research
 # Code hygiene
