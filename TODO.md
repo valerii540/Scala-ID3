@@ -15,7 +15,18 @@
   - [x] **PRIV** - Private frame 
   - [x] **APIC** - Attached picture frame
   - [x] **COMM** - Comment frame
-  - [ ] Text info frames
+  - [x] Text info frames
+    - [x] **TSST** - Set subtitle
+    - [x] **TSOT** - Title sort order
+    - [x] **TSOP** - Performer sort order
+    - [x] **TSOA** - Album sort order
+    - [x] **TPRO** - Produced notice
+    - [x] **TMOO** - Mood
+    - [x] **TMCL** - Musician credits
+    - [x] **TIPL** - Involved people
+    - [x] **TDRL** - Release timestamp
+    - [x] **TDOR** - Original release timestamp
+    - [x] **TDEN** - Encoding timestamp
     - [x] **TALB** - Album              
     - [x] **TBPM** - Bpm                
     - [x] **TCOM** - Composers          
