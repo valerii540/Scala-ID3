@@ -47,6 +47,10 @@ private[scalaID3] object FrameParser {
         val frame = parsePopularimeterFrame(frameHeader)
         traverseFile(acc + (frameHeader.frameType -> (FrameWithPosition(frame, framePosition) +: acc(frameHeader.frameType))))
 
+      case AudioEncryptionFrameType =>
+        val frame = parseAudioEncryptionFrame(frameHeader)
+        traverseFile(acc + (frameHeader.frameType -> (FrameWithPosition(frame, framePosition) +: acc(frameHeader.frameType))))
+
       case NCONFrameType =>
         val frame = parseNCONFrame(frameHeader)
         traverseFile(acc + (frameHeader.frameType -> (FrameWithPosition(frame, framePosition) +: acc(frameHeader.frameType))))
@@ -150,7 +154,7 @@ private[scalaID3] object FrameParser {
 
   private def parsePopularimeterFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): PopularimeterFrame = {
     val emailBytes = file.takeWhile(_ != 0)
-    val rating     = 0xFF & file.readByte() // Make "unsigned" int from signed byte
+    val rating     = file.readUnsignedByte()
 
     val counterSize = frameHeader.size - emailBytes.size - 4 - 1
 
@@ -176,6 +180,21 @@ private[scalaID3] object FrameParser {
       pictureType = PictureTypes(pictureType),
       description = new String(description.toArray, EncodingHelper.standardCharset(encoding)),
       pictureData = pictureData
+    )
+  }
+
+  private def parseAudioEncryptionFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): AudioEncryptionFrame = {
+    val ownerIdBytes = file.takeWhile(_ != 0)
+    val previewStart = file.readShort()
+    val previewLength = file.readShort()
+    val data = file.take(frameHeader.size - ownerIdBytes.size - 4 - 1)
+
+    AudioEncryptionFrame(
+      frameHeader = frameHeader,
+      ownerId = ownerIdBytes.map(_.toChar).mkString,
+      previewStart = previewStart,
+      previewLength = previewLength,
+      encryptedInfo = data.toArray
     )
   }
 
