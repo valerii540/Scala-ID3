@@ -51,6 +51,10 @@ private[scalaID3] object FrameParser {
         val frame = parseAudioEncryptionFrame(frameHeader)
         traverseFile(acc + (frameHeader.frameType -> (FrameWithPosition(frame, framePosition) +: acc(frameHeader.frameType))))
 
+      case CommercialFrameType =>
+        val frame = parseCommercialFrame(frameHeader)
+        traverseFile(acc + (frameHeader.frameType -> (FrameWithPosition(frame, framePosition) +: acc(frameHeader.frameType))))
+
       case NCONFrameType =>
         val frame = parseNCONFrame(frameHeader)
         traverseFile(acc + (frameHeader.frameType -> (FrameWithPosition(frame, framePosition) +: acc(frameHeader.frameType))))
@@ -183,11 +187,12 @@ private[scalaID3] object FrameParser {
     )
   }
 
+  //FIXME: not tested
   private def parseAudioEncryptionFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): AudioEncryptionFrame = {
-    val ownerIdBytes = file.takeWhile(_ != 0)
-    val previewStart = file.readShort()
+    val ownerIdBytes  = file.takeWhile(_ != 0)
+    val previewStart  = file.readShort()
     val previewLength = file.readShort()
-    val data = file.take(frameHeader.size - ownerIdBytes.size - 4 - 1)
+    val data          = file.take(frameHeader.size - ownerIdBytes.size - 4 - 1)
 
     AudioEncryptionFrame(
       frameHeader = frameHeader,
@@ -195,6 +200,35 @@ private[scalaID3] object FrameParser {
       previewStart = previewStart,
       previewLength = previewLength,
       encryptedInfo = data.toArray
+    )
+  }
+
+  //FIXME: not tested
+  private def parseCommercialFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): CommercialFrame = {
+    val encoding         = EncodingHelper.identify(file.readByte()).get
+    val priceBytes       = file.takeWhile(_ != 0)
+    val validUntilBytes  = file.take(16)
+    val contactURLBytes  = file.takeWhile(_ != 0)
+    val receivedAs       = ReceivedAsTypes(file.readUnsignedByte())
+    val sellerBytes      = file.takeWhile(_ != 0)
+    val descriptionBytes = file.takeWhile(_ != 0)
+    val mimeTypeBytes    = file.takeWhile(_ != 0)
+    val logo =
+      file.take(
+        frameHeader.size - 1 - priceBytes.size - validUntilBytes.size - contactURLBytes.size - 1 - sellerBytes.size - descriptionBytes.size - mimeTypeBytes.size - 1
+      )
+
+    CommercialFrame(
+      frameHeader = frameHeader,
+      encoding = encoding,
+      price = priceBytes.map(_.toChar).mkString,
+      validUntil = validUntilBytes.map(_.toChar).mkString,
+      contactURL = contactURLBytes.map(_.toChar).mkString,
+      receivedAs = receivedAs,
+      seller = new String(sellerBytes.toArray, EncodingHelper.standardCharset(encoding)),
+      description = new String(descriptionBytes.toArray, EncodingHelper.standardCharset(encoding)),
+      pictureMIME = mimeTypeBytes.map(_.toChar).mkString,
+      sellerLogo = logo.toArray
     )
   }
 
