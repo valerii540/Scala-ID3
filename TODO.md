@@ -11,10 +11,20 @@
 - [ ] Standard frames
   - ...
   - [x] **POPM** - Popularimeter frame
-  - [x] **MCDI** - Music CD identifier
+  - [x] **MCDI** - Music CD identifier frame
   - [x] **PRIV** - Private frame 
   - [x] **APIC** - Attached picture frame
   - [x] **COMM** - Comment frame
+  - [ ] URL Link frames
+    - [x] **WCOM** - Commercial information link
+    - [ ] **WCOP** -
+    - [ ] **WOAF** -
+    - [ ] **WOAR** -
+    - [ ] **WOAS** -
+    - [ ] **WORS** -
+    - [ ] **WPAY** -
+    - [ ] **WPUB** -
+    - [x] **WXXX** - User defined link
   - [x] Text info frames
     - [x] **TSST** - Set subtitle
     - [x] **TSOT** - Title sort order

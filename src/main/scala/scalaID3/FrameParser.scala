@@ -1,6 +1,7 @@
 package scalaID3
 
 import java.io.RandomAccessFile
+import java.nio.charset.StandardCharsets
 
 import scalaID3.data.AllFrameTypes
 import scalaID3.models.enums.FrameFlags
@@ -25,6 +26,10 @@ private[scalaID3] object FrameParser {
     frameHeader.frameType match {
       case _: TextInfoFrameType =>
         val frame = parseTextInfoFrame(frameHeader)
+        traverseFile(acc + (frameHeader.frameType -> (FrameWithPosition(frame, framePosition) +: acc(frameHeader.frameType))))
+
+      case _: UrlLinkFrameType =>
+        val frame = parseUrlLinkFrame(frameHeader)
         traverseFile(acc + (frameHeader.frameType -> (FrameWithPosition(frame, framePosition) +: acc(frameHeader.frameType))))
 
       case PictureFrameType =>
@@ -123,6 +128,30 @@ private[scalaID3] object FrameParser {
         )
     }
   }
+
+  private def parseUrlLinkFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): UrlLinkFrame =
+    frameHeader.frameType match {
+      case UrlLinkFrameTypes.UserDefinedUrlLink =>
+        val encoding         = EncodingHelper.identify(file.readByte()).get
+        val descriptionBytes = file.takeWhile(_ != 0)
+        val urlBytes         = file.take(frameHeader.size - 1 - descriptionBytes.size - 1)
+
+        UserDefinedUrlLinkFrame(
+          frameHeader = frameHeader,
+          encoding = encoding,
+          description = new String(descriptionBytes.toArray, EncodingHelper.standardCharset(encoding)),
+          url = new String(urlBytes.toArray, StandardCharsets.ISO_8859_1)
+        )
+
+      // FIXME: not tested
+      case _ =>
+        val urlBytes = file.take(frameHeader.size - 1)
+
+        StandardUrlLinkFrame(
+          frameHeader = frameHeader,
+          url = new String(urlBytes.toArray, StandardCharsets.ISO_8859_1)
+        )
+    }
 
   private def parseCommentFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): CommentFrame = {
     val encoding         = EncodingHelper.identify(file.readByte()).get
