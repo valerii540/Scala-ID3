@@ -12,8 +12,10 @@ object AllFrameTypes {
       .orElse(Option.when(id == PrivateFrameType.id)(PrivateFrameType))
       .orElse(Option.when(id == MusicCDidFrameType.id)(MusicCDidFrameType))
       .orElse(Option.when(id == PopularimeterFrameType.id)(PopularimeterFrameType))
-      .orElse(Option.when(id == AudioEncryptionFrameType.id)(AudioEncryptionFrameType))
-      .orElse(Option.when(id == CommercialFrameType.id)(CommercialFrameType))
+      .orElse(UrlLinkFrameTypes.get(id))
+// Disable untested frames
+//      .orElse(Option.when(id == AudioEncryptionFrameType.id)(AudioEncryptionFrameType))
+//      .orElse(Option.when(id == CommercialFrameType.id)(CommercialFrameType))
       // Non-standard frames
       .orElse(Option.when(id == NCONFrameType.id)(NCONFrameType))
       .getOrElse(Unknown(id))
