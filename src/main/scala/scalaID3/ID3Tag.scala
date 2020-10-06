@@ -4,21 +4,20 @@ import java.awt.image.BufferedImage
 import java.io.{ByteArrayInputStream, File, RandomAccessFile}
 
 import javax.imageio.ImageIO
-import scalaID3.Helper._
 import scalaID3.models._
-import scalaID3.models.enums.{ExtendedFlags, Flags}
-import scalaID3.models.frames.AttachedPictureFrame.PictureTypes
-import scalaID3.models.frames.AttachedPictureFrame.PictureTypes.PictureType
-import scalaID3.models.frames.{AttachedPictureFrame, Frame, TextInfoFrame}
-import scalaID3.models.types.{FrameType, PictureFrameType, TextInfoFrameType}
+import scalaID3.models.enums.FrameTypes.FrameType
+import scalaID3.models.enums.PictureTypes.PictureType
+import scalaID3.models.enums.{ExtendedFlags, Flags, FrameTypes, PictureTypes}
+import scalaID3.models.frames.Frame
+import scalaID3.models.frames.standard.AttachedPictureFrame
+import scalaID3.utils.Helper._
 
-import scala.util.{Failure, Try}
+import scala.util.{Failure, Success, Try}
 
 sealed trait ID3TagOps {
   def getFrame(frameType: FrameType): Option[Frame]
-  def getTextInfoFrame(frameType: TextInfoFrameType): Option[TextInfoFrame]
   def getPictureFrame(pictureType: PictureType): Option[AttachedPictureFrame]
-  def getPictureAsFile(path: String, pictureType: PictureType): File
+  def savePictureAs(path: String, pictureType: PictureType): Try[File]
   def close(): Unit
 }
 
@@ -77,27 +76,26 @@ final class ID3Tag(private val filePath: String) extends ID3TagOps {
     )
   }
 
-  override def getPictureAsFile(path: String, pictureType: PictureType = PictureTypes.FrontCover): File = {
-    val pictureFrame = getPictureFrame(pictureType).getOrElse(throw new Exception(s"Picture with type $pictureType not found"))
+  override def savePictureAs(path: String, pictureType: PictureType = PictureTypes.FrontCover): Try[File] =
+    Try(getPictureFrame(pictureType).get).transform(
+      pictureFrame => {
+        val mimeType = pictureFrame.mimeType.split("/").last
 
-    val mimeType = pictureFrame.mimeType.split("/").last
+        assert(mimeType != "image", "Missing picture type in the frame")
 
-    assert(mimeType != "image", "Missing picture type in the frame")
-
-    val bi: BufferedImage = ImageIO.read(new ByteArrayInputStream(pictureFrame.pictureData))
-    val image             = new File(path.replaceFirst(removeExtensionRegex, "") + "." + mimeType)
-    ImageIO.write(bi, mimeType, image)
-    image
-  }
+        val bi: BufferedImage = ImageIO.read(new ByteArrayInputStream(pictureFrame.pictureData))
+        val image             = new File(path.replaceFirst(removeExtensionRegex, "") + "." + mimeType)
+        ImageIO.write(bi, mimeType, image)
+        Success(image)
+      },
+      exception => Failure(exception)
+    )
 
   override def getFrame(frameType: FrameType): Option[Frame] =
     framesWithPositions(frameType).headOption.map(_.frame)
 
-  override def getTextInfoFrame(frameType: TextInfoFrameType): Option[TextInfoFrame] =
-    framesWithPositions(frameType).headOption.map(_.frame.as[TextInfoFrame])
-
   override def getPictureFrame(pictureType: PictureType = PictureTypes.FrontCover): Option[AttachedPictureFrame] =
-    framesWithPositions(PictureFrameType)
+    framesWithPositions(FrameTypes.Picture)
       .collectFirst { case FrameWithPosition(frame: AttachedPictureFrame, _) if frame.pictureType == pictureType => frame }
 
   override def close(): Unit = file.close()

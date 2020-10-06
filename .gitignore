@@ -7,3 +7,4 @@ target/
 project/target/
 
 .idea
+src/main/scala/Main.scala
