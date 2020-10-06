@@ -5,19 +5,18 @@ import java.io.{ByteArrayInputStream, File, RandomAccessFile}
 
 import javax.imageio.ImageIO
 import scalaID3.models._
-import scalaID3.models.enums.{ExtendedFlags, Flags}
+import scalaID3.models.enums.FrameTypes.FrameType
+import scalaID3.models.enums.{ExtendedFlags, Flags, FrameTypes}
 import scalaID3.models.frames.Frame
 import scalaID3.models.frames.standard.AttachedPictureFrame.PictureTypes
 import scalaID3.models.frames.standard.AttachedPictureFrame.PictureTypes.PictureType
 import scalaID3.models.frames.standard.{AttachedPictureFrame, StandardTextInfoFrame}
-import scalaID3.models.types.{FrameType, PictureFrameType, TextInfoFrameType}
 import scalaID3.utils.Helper._
 
 import scala.util.{Failure, Success, Try}
 
 sealed trait ID3TagOps {
   def getFrame(frameType: FrameType): Option[Frame]
-  def getTextInfoFrame(frameType: TextInfoFrameType): Option[StandardTextInfoFrame]
   def getPictureFrame(pictureType: PictureType): Option[AttachedPictureFrame]
   def savePictureAs(path: String, pictureType: PictureType): Try[File]
   def close(): Unit
@@ -96,11 +95,8 @@ final class ID3Tag(private val filePath: String) extends ID3TagOps {
   override def getFrame(frameType: FrameType): Option[Frame] =
     framesWithPositions(frameType).headOption.map(_.frame)
 
-  override def getTextInfoFrame(frameType: TextInfoFrameType): Option[StandardTextInfoFrame] =
-    framesWithPositions(frameType).headOption.map(_.frame.asInstanceOf[StandardTextInfoFrame])
-
   override def getPictureFrame(pictureType: PictureType = PictureTypes.FrontCover): Option[AttachedPictureFrame] =
-    framesWithPositions(PictureFrameType)
+    framesWithPositions(FrameTypes.Picture)
       .collectFirst { case FrameWithPosition(frame: AttachedPictureFrame, _) if frame.pictureType == pictureType => frame }
 
   override def close(): Unit = file.close()

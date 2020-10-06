@@ -3,7 +3,7 @@ package scalaID3.models
 import scalaID3.models.enums.ExtendedFlags.ExtendedFlag
 import scalaID3.models.enums.Flags.Flag
 import scalaID3.models.enums.FrameFlags.FrameFlag
-import scalaID3.models.types.FrameType
+import scalaID3.models.enums.FrameTypes.FrameType
 
 final case class ID3Header(id: String,
                            version: String,
