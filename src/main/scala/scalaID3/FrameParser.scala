@@ -4,11 +4,10 @@ import java.io.RandomAccessFile
 import java.nio.charset.StandardCharsets
 
 import scalaID3.models.enums.FrameTypes._
-import scalaID3.models.enums.{FrameFlags, FrameTypes}
-import scalaID3.models.frames.{Frame, UnknownFrame}
+import scalaID3.models.enums.{FrameFlags, FrameTypes, PictureTypes, ReceivedAsTypes}
 import scalaID3.models.frames.nonstandard.NCONFrame
-import scalaID3.models.frames.standard.AttachedPictureFrame.PictureTypes
 import scalaID3.models.frames.standard._
+import scalaID3.models.frames.{Frame, UnknownFrame}
 import scalaID3.models.{FrameHeader, FrameWithPosition}
 import scalaID3.utils.EncodingHelper
 import scalaID3.utils.Helper._

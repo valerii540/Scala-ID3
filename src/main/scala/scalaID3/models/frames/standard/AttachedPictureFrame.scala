@@ -1,9 +1,9 @@
 package scalaID3.models.frames.standard
 
 import scalaID3.models.FrameHeader
+import scalaID3.models.enums.PictureTypes.PictureType
+import scalaID3.models.enums.TextEncodings.Encoding
 import scalaID3.models.frames.Frame
-import scalaID3.models.frames.standard.AttachedPictureFrame.PictureTypes.PictureType
-import scalaID3.utils.EncodingHelper.TextEncodings.Encoding
 
 final case class AttachedPictureFrame(frameHeader: FrameHeader,
                                       textEncoding: Encoding,
@@ -12,12 +12,3 @@ final case class AttachedPictureFrame(frameHeader: FrameHeader,
                                       description: String,
                                       pictureData: Array[Byte])
     extends Frame
-
-object AttachedPictureFrame {
-  object PictureTypes extends Enumeration {
-    type PictureType = Value
-
-    val Other, FileIcon, OtherFileIcon, FrontCover, BackCover, LeafletPage, Media, Lead, Artist, Conductor, Band, Composer, Lyricist,
-    RecordingLocation, DuringRecording, DuringPerformance, VideoScreenshot, ColouredFish, Illustration, BandLogo, PublisherLogo = Value
-  }
-}
