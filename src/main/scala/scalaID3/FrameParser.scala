@@ -3,17 +3,18 @@ package scalaID3
 import java.io.RandomAccessFile
 import java.nio.charset.StandardCharsets
 
-import scalaID3.data.AllFrameTypes
-import scalaID3.models.enums.FrameFlags
+import scalaID3.models.enums.FrameTypes._
+import scalaID3.models.enums.{FrameFlags, FrameTypes}
+import scalaID3.models.frames.{Frame, UnknownFrame}
 import scalaID3.models.frames.nonstandard.NCONFrame
 import scalaID3.models.frames.standard.AttachedPictureFrame.PictureTypes
 import scalaID3.models.frames.standard._
-import scalaID3.models.types._
 import scalaID3.models.{FrameHeader, FrameWithPosition}
 import scalaID3.utils.EncodingHelper
 import scalaID3.utils.Helper._
 
 import scala.annotation.tailrec
+import scala.util.{Failure, Success, Try}
 
 private[scalaID3] object FrameParser {
 
@@ -23,62 +24,34 @@ private[scalaID3] object FrameParser {
 
     val frameHeader = parseFrameHeader()
 
-    frameHeader.frameType match {
-      case _: TextInfoFrameType =>
-        val frame = parseTextInfoFrame(frameHeader)
-        traverseFile(acc + (frameHeader.frameType -> (FrameWithPosition(frame, framePosition) +: acc(frameHeader.frameType))))
-
-      case _: UrlLinkFrameType =>
-        val frame = parseUrlLinkFrame(frameHeader)
-        traverseFile(acc + (frameHeader.frameType -> (FrameWithPosition(frame, framePosition) +: acc(frameHeader.frameType))))
-
-      case PictureFrameType =>
-        val frame = parseAttachedPictureFrame(frameHeader)
-        traverseFile(acc + (frameHeader.frameType -> (FrameWithPosition(frame, framePosition) +: acc(frameHeader.frameType))))
-
-      case CommentFrameType =>
-        val frame = parseCommentFrame(frameHeader)
-        traverseFile(acc + (frameHeader.frameType -> (FrameWithPosition(frame, framePosition) +: acc(frameHeader.frameType))))
-
-      case PrivateFrameType =>
-        val frame = parsePrivateFrame(frameHeader)
-        traverseFile(acc + (frameHeader.frameType -> (FrameWithPosition(frame, framePosition) +: acc(frameHeader.frameType))))
-
-      case MusicCDidFrameType =>
-        val frame = parseMusicCDidFrame(frameHeader)
-        traverseFile(acc + (frameHeader.frameType -> (FrameWithPosition(frame, framePosition) +: acc(frameHeader.frameType))))
-
-      case PopularimeterFrameType =>
-        val frame = parsePopularimeterFrame(frameHeader)
-        traverseFile(acc + (frameHeader.frameType -> (FrameWithPosition(frame, framePosition) +: acc(frameHeader.frameType))))
-
-      case AudioEncryptionFrameType =>
-        val frame = parseAudioEncryptionFrame(frameHeader)
-        traverseFile(acc + (frameHeader.frameType -> (FrameWithPosition(frame, framePosition) +: acc(frameHeader.frameType))))
-
-      case CommercialFrameType =>
-        val frame = parseCommercialFrame(frameHeader)
-        traverseFile(acc + (frameHeader.frameType -> (FrameWithPosition(frame, framePosition) +: acc(frameHeader.frameType))))
-
-      case NCONFrameType =>
-        val frame = parseNCONFrame(frameHeader)
-        traverseFile(acc + (frameHeader.frameType -> (FrameWithPosition(frame, framePosition) +: acc(frameHeader.frameType))))
-
-      case Unknown(id) =>
-        println(s"From $framePosition unsupported frame ID type: $id")
-        acc
+    val frame: Frame = frameHeader.frameType match {
+      case textInfoFrame if textInfoFrame.toString.startsWith("T") => parseTextInfoFrame(frameHeader)
+      case urlLinkFrame if urlLinkFrame.toString.startsWith("W")   => parseUrlLinkFrame(frameHeader)
+      case Picture                                                 => parseAttachedPictureFrame(frameHeader)
+      case Comment                                                 => parseCommentFrame(frameHeader)
+      case Private                                                 => parsePrivateFrame(frameHeader)
+      case MusicCDid                                               => parseMusicCDidFrame(frameHeader)
+      case Popularimeter                                           => parsePopularimeterFrame(frameHeader)
+      case AudioEncryption                                         => parseAudioEncryptionFrame(frameHeader)
+      case Commercial                                              => parseCommercialFrame(frameHeader)
+      case NCON                                                    => parseNCONFrame(frameHeader)
+      case Unknown                                                 => UnknownFrame(frameHeader)
     }
 
+    if (frame.frameHeader.frameType != Unknown)
+      traverseFile(acc + (frameHeader.frameType -> (FrameWithPosition(frame, framePosition) +: acc(frameHeader.frameType))))
+    else acc
   }
 
   private def parseFrameHeader()(implicit file: RandomAccessFile): FrameHeader = {
     val frameID = file.take(4).map(_.toChar).mkString
 
-    AllFrameTypes.matchFrameType(frameID) match {
-      case unknown @ Unknown(_) =>
-        FrameHeader(unknown, 0, Set(), None, None, None)
+    Try(FrameTypes.withName(frameID)) match {
+      case Failure(_) =>
+        println(s"From ${file.getFilePointer} unsupported frame ID type: $frameID")
+        FrameHeader(Unknown, 0, Set(), None, None, None)
 
-      case frameType: FrameType =>
+      case Success(frameType) =>
         val frameSize       = file.readInt()
         val frameFlagsBytes = file.take(2)
 
@@ -107,7 +80,7 @@ private[scalaID3] object FrameParser {
     val encoding = EncodingHelper.identify(file.readByte()).get
 
     frameHeader.frameType match {
-      case TextInfoFrameTypes.UserDefinedText =>
+      case UserDefinedText =>
         val descriptionBytes = file.takeWhile(_ != 0)
         val informationBytes = file.take(frameHeader.size - descriptionBytes.length - 2)
 
@@ -131,7 +104,7 @@ private[scalaID3] object FrameParser {
 
   private def parseUrlLinkFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): UrlLinkFrame =
     frameHeader.frameType match {
-      case UrlLinkFrameTypes.UserDefinedUrlLink =>
+      case UserDefinedUrlLink =>
         val encoding         = EncodingHelper.identify(file.readByte()).get
         val descriptionBytes = file.takeWhile(_ != 0)
         val urlBytes         = file.take(frameHeader.size - 1 - descriptionBytes.size - 1)
