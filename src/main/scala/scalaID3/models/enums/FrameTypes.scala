@@ -58,8 +58,15 @@ object FrameTypes extends Enumeration {
   val UserDefinedText: FrameType     = Value("TXXX") // ok
 
   // Url link frames
-  val CommercialInformationLink: FrameType = Value("WCOM")
-  val UserDefinedUrlLink: FrameType        = Value("WXXX")
+  val CommercialInfoLink: FrameType           = Value("WCOM")
+  val CopyrightInfoLink: FrameType            = Value("WCOP")
+  val OfficialAudioFileWebpage: FrameType     = Value("WOAF")
+  val OfficialArtistWebpage: FrameType        = Value("WOAR")
+  val OfficialAudioSourceWebpage: FrameType   = Value("WOAS")
+  val OfficialInternetRadioWebpage: FrameType = Value("WORS")
+  val PaymentLink: FrameType                  = Value("WPAY")
+  val PublishersOfficialWebpage: FrameType    = Value("WPUB")
+  val UserDefinedLink: FrameType              = Value("WXXX")
 
   // Others
   val AudioEncryption: FrameType = Value("AENC")
@@ -69,6 +76,7 @@ object FrameTypes extends Enumeration {
   val Picture: FrameType         = Value("APIC")
   val Popularimeter: FrameType   = Value("POPM")
   val Private: FrameType         = Value("PRIV")
+  val UnsyncLyrics: FrameType    = Value("USLT")
 
   // Non-standard
   val NCON: FrameType = Value("NCON")

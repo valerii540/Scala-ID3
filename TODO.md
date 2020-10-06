@@ -10,20 +10,21 @@
 ### Tag reading support
 - [ ] Standard frames
   - ...
+  - [x] **USLT** - Unsynchronized lyrics frame
   - [x] **POPM** - Popularimeter frame
   - [x] **MCDI** - Music CD identifier frame
   - [x] **PRIV** - Private frame 
   - [x] **APIC** - Attached picture frame
   - [x] **COMM** - Comment frame
-  - [ ] URL Link frames
+  - [x] URL Link frames
     - [x] **WCOM** - Commercial information link
-    - [ ] **WCOP** -
-    - [ ] **WOAF** -
-    - [ ] **WOAR** -
-    - [ ] **WOAS** -
-    - [ ] **WORS** -
-    - [ ] **WPAY** -
-    - [ ] **WPUB** -
+    - [x] **WCOP** - Copyright information link
+    - [x] **WOAF** - Official audio file webpage
+    - [x] **WOAR** - Official artist webpage
+    - [x] **WOAS** - Official audio source webpage
+    - [x] **WORS** - Official internet radio webpage
+    - [x] **WPAY** - Payment link
+    - [x] **WPUB** - Publishers official webpage
     - [x] **WXXX** - User defined link
   - [x] Text info frames
     - [x] **TSST** - Set subtitle

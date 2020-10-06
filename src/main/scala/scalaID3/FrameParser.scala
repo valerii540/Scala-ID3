@@ -21,34 +21,36 @@ private[scalaID3] object FrameParser {
   def traverseFile(acc: Map[FrameType, Seq[FrameWithPosition]])(implicit file: RandomAccessFile): Map[FrameType, Seq[FrameWithPosition]] = {
     val framePosition = file.getFilePointer
 
-    val frameHeader = parseFrameHeader()
+    val headerParsingAttempt = parseFrameHeader()
 
-    val frame: Frame = frameHeader.frameType match {
-      case textInfoFrame if textInfoFrame.toString.startsWith("T") => parseTextInfoFrame(frameHeader)
-      case urlLinkFrame if urlLinkFrame.toString.startsWith("W")   => parseUrlLinkFrame(frameHeader)
-      case Picture                                                 => parseAttachedPictureFrame(frameHeader)
-      case Comment                                                 => parseCommentFrame(frameHeader)
-      case Private                                                 => parsePrivateFrame(frameHeader)
-      case MusicCDid                                               => parseMusicCDidFrame(frameHeader)
-      case Popularimeter                                           => parsePopularimeterFrame(frameHeader)
-      case AudioEncryption                                         => parseAudioEncryptionFrame(frameHeader)
-      case Commercial                                              => parseCommercialFrame(frameHeader)
-      case NCON                                                    => parseNCONFrame(frameHeader)
-      case Unknown                                                 => UnknownFrame(frameHeader)
+    headerParsingAttempt match {
+      case Right(frameHeader) =>
+        val frame: Frame = frameHeader.frameType match {
+          case textInfoFrame if textInfoFrame.toString.startsWith("T") => parseTextInfoFrame(frameHeader)
+          case urlLinkFrame if urlLinkFrame.toString.startsWith("W")   => parseUrlLinkFrame(frameHeader)
+          case Picture                                                 => parseAttachedPictureFrame(frameHeader)
+          case Comment                                                 => parseCommentFrame(frameHeader)
+          case Private                                                 => parsePrivateFrame(frameHeader)
+          case MusicCDid                                               => parseMusicCDidFrame(frameHeader)
+          case Popularimeter                                           => parsePopularimeterFrame(frameHeader)
+          case UnsyncLyrics                                            => parseUnsyncLyricsFrame(frameHeader)
+          case AudioEncryption                                         => parseAudioEncryptionFrame(frameHeader)
+          case Commercial                                              => parseCommercialFrame(frameHeader)
+          case NCON                                                    => parseNCONFrame(frameHeader)
+        }
+        traverseFile(acc + (frameHeader.frameType -> (FrameWithPosition(frame, framePosition) +: acc(frameHeader.frameType))))
+
+      case Left(unknownId) =>
+        val frame = UnknownFrame(FrameHeader(Unknown, 0, Set(), None, None, None), unknownId, framePosition)
+        acc + (Unknown -> (FrameWithPosition(frame, framePosition) +: acc(Unknown)))
     }
-
-    if (frame.frameHeader.frameType != Unknown)
-      traverseFile(acc + (frameHeader.frameType -> (FrameWithPosition(frame, framePosition) +: acc(frameHeader.frameType))))
-    else acc
   }
 
-  private def parseFrameHeader()(implicit file: RandomAccessFile): FrameHeader = {
+  private def parseFrameHeader()(implicit file: RandomAccessFile): Either[String, FrameHeader] = {
     val frameID = file.take(4).map(_.toChar).mkString
 
     Try(FrameTypes.withName(frameID)) match {
-      case Failure(_) =>
-        println(s"From ${file.getFilePointer} unsupported frame ID type: $frameID")
-        FrameHeader(Unknown, 0, Set(), None, None, None)
+      case Failure(_) => Left(frameID)
 
       case Success(frameType) =>
         val frameSize       = file.readInt()
@@ -63,14 +65,15 @@ private[scalaID3] object FrameParser {
           Option.when((1 << 5 & frameFlagsBytes(1)) != 0)(FrameFlags.GroupingIdentity)
         ).flatten
 
-        FrameHeader(
-          frameType = frameType,
-          size = frameSize,
-          flags = flags,
-          decompressedSize = Option.when(flags.contains(FrameFlags.Compression))(file.readInt()),
-          encryption = Option.when(flags.contains(FrameFlags.Encryption))(file.readByte()),
-          group = Option.when(flags.contains(FrameFlags.GroupingIdentity))(file.readByte())
-        )
+        Right(
+          FrameHeader(
+            frameType = frameType,
+            size = frameSize,
+            flags = flags,
+            decompressedSize = Option.when(flags.contains(FrameFlags.Compression))(file.readInt()),
+            encryption = Option.when(flags.contains(FrameFlags.Encryption))(file.readByte()),
+            group = Option.when(flags.contains(FrameFlags.GroupingIdentity))(file.readByte())
+          ))
 
     }
   }
@@ -103,7 +106,7 @@ private[scalaID3] object FrameParser {
 
   private def parseUrlLinkFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): UrlLinkFrame =
     frameHeader.frameType match {
-      case UserDefinedUrlLink =>
+      case UserDefinedLink =>
         val encoding         = EncodingHelper.identify(file.readByte()).get
         val descriptionBytes = file.takeWhile(_ != 0)
         val urlBytes         = file.take(frameHeader.size - 1 - descriptionBytes.size - 1)
@@ -115,9 +118,8 @@ private[scalaID3] object FrameParser {
           url = new String(urlBytes.toArray, StandardCharsets.ISO_8859_1)
         )
 
-      // FIXME: not tested
       case _ =>
-        val urlBytes = file.take(frameHeader.size - 1)
+        val urlBytes = file.take(frameHeader.size)
 
         StandardUrlLinkFrame(
           frameHeader = frameHeader,
@@ -185,6 +187,21 @@ private[scalaID3] object FrameParser {
       pictureType = PictureTypes(pictureType),
       description = new String(description.toArray, EncodingHelper.standardCharset(encoding)),
       pictureData = pictureData
+    )
+  }
+
+  private def parseUnsyncLyricsFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): UnsyncLyricsFrame = {
+    val encoding        = EncodingHelper.identify(file.readByte()).get
+    val language        = file.take(3).map(_.toChar).mkString
+    val descriptorBytes = file.takeWhile(_ != 0)
+    val lyricsBytes     = file.take(frameHeader.size - 1 - 3 - descriptorBytes.size - 1)
+
+    UnsyncLyricsFrame(
+      frameHeader = frameHeader,
+      encoding = encoding,
+      language = language,
+      descriptor = new String(descriptorBytes.toArray, EncodingHelper.standardCharset(encoding)),
+      lyrics = new String(lyricsBytes.toArray, EncodingHelper.standardCharset(encoding))
     )
   }
 
