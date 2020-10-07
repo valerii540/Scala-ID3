@@ -217,7 +217,7 @@ private[scalaID3] object FrameParser {
         Success(TimestampFormats.MPEGBased)
     }.get
     val contentType     = ContentTypes(file.readByte())
-    val descriptor      = new String(file.take(frameHeader.size - 6 - 1).toArray, EncodingHelper.standardCharset(encoding))
+    val descriptor      = new String(file.take(frameHeader.size - 6).toArray, EncodingHelper.standardCharset(encoding))
 
     SyncLyricsFrame(
       frameHeader = frameHeader,
