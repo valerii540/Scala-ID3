@@ -246,7 +246,7 @@ private[scalaID3] object FrameParser {
     val mimeTypeBytes    = file.takeWhile(_ != 0)
     val fileNameBytes    = file.takeWhile(_ != 0)
     val descriptionBytes = file.takeWhile(_ != 0)
-    val data             = file.take(frameHeader.size - 1 - mimeTypeBytes.size - fileNameBytes.size - descriptionBytes.size - 1)
+    val data             = file.take(frameHeader.size - 1 - mimeTypeBytes.size - 1 - fileNameBytes.size - 1 - descriptionBytes.size - 1)
 
     EncapsulatedObjectFrame(
       frameHeader = frameHeader,
