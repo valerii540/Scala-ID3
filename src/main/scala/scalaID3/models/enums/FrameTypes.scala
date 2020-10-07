@@ -69,16 +69,17 @@ object FrameTypes extends Enumeration {
   val UserDefinedLink: FrameType              = Value("WXXX")
 
   // Other frames
-  val AudioEncryption: FrameType = Value("AENC")
-  val Comment: FrameType         = Value("COMM")
-  val Commercial: FrameType      = Value("COMR")
-  val MusicCDid: FrameType       = Value("MCDI")
-  val Picture: FrameType         = Value("APIC")
-  val Popularimeter: FrameType   = Value("POPM")
-  val Private: FrameType         = Value("PRIV")
-  val UnsyncLyrics: FrameType    = Value("USLT")
-  val SyncLyrics: FrameType      = Value("SYLT")
-  val UniqueFileId: FrameType    = Value("UFID")
+  val AudioEncryption: FrameType    = Value("AENC")
+  val Comment: FrameType            = Value("COMM")
+  val Commercial: FrameType         = Value("COMR")
+  val MusicCDid: FrameType          = Value("MCDI")
+  val Picture: FrameType            = Value("APIC")
+  val Popularimeter: FrameType      = Value("POPM")
+  val Private: FrameType            = Value("PRIV")
+  val UnsyncLyrics: FrameType       = Value("USLT")
+  val SyncLyrics: FrameType         = Value("SYLT")
+  val UniqueFileId: FrameType       = Value("UFID")
+  val EncapsulatedObject: FrameType = Value("GEOB")
 
   // Non-standard frames
   val MusicMatchNCON: FrameType        = Value("NCON")

@@ -37,6 +37,7 @@ private[scalaID3] object FrameParser {
           case UnsyncLyrics                                            => parseUnsyncLyricsFrame(frameHeader)
           case SyncLyrics                                              => parseSyncLyricsFrame(frameHeader)
           case UniqueFileId                                            => parseUniqueFileIdFrame(frameHeader)
+          case EncapsulatedObject                                      => parseEncapsulatedObjectFrame(frameHeader)
           case AudioEncryption                                         => parseAudioEncryptionFrame(frameHeader)
           case Commercial                                              => parseCommercialFrame(frameHeader)
           case MusicMatchNCON                                          => parseNCONFrame(frameHeader)
@@ -209,15 +210,15 @@ private[scalaID3] object FrameParser {
   }
 
   private def parseSyncLyricsFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): SyncLyricsFrame = {
-    val encoding        = TextEncodings(file.readByte())
-    val language        = file.take(3).map(_.toChar).mkString
+    val encoding = TextEncodings(file.readByte())
+    val language = file.take(3).map(_.toChar).mkString
     val timestampFormat = Try(TimestampFormats(file.readByte())).recoverWith {
       case _ =>
         println("Unsupported timestamp format in the SyncLyricsFrame. Using MPEG based instead")
         Success(TimestampFormats.MPEGBased)
     }.get
-    val contentType     = ContentTypes(file.readByte())
-    val descriptor      = new String(file.take(frameHeader.size - 6).toArray, EncodingHelper.standardCharset(encoding))
+    val contentType = ContentTypes(file.readByte())
+    val descriptor  = new String(file.take(frameHeader.size - 6).toArray, EncodingHelper.standardCharset(encoding))
 
     SyncLyricsFrame(
       frameHeader = frameHeader,
@@ -237,6 +238,23 @@ private[scalaID3] object FrameParser {
       frameHeader = frameHeader,
       ownerId = ownerIdBytes.map(_.toChar).mkString,
       id = id.toArray
+    )
+  }
+
+  private def parseEncapsulatedObjectFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): EncapsulatedObjectFrame = {
+    val encoding         = TextEncodings(file.readByte())
+    val mimeTypeBytes    = file.takeWhile(_ != 0)
+    val fileNameBytes    = file.takeWhile(_ != 0)
+    val descriptionBytes = file.takeWhile(_ != 0)
+    val data             = file.take(frameHeader.size - 1 - mimeTypeBytes.size - fileNameBytes.size - descriptionBytes.size - 1)
+
+    EncapsulatedObjectFrame(
+      frameHeader = frameHeader,
+      encoding = encoding,
+      mimeType = mimeTypeBytes.map(_.toChar).mkString,
+      fileName = new String(fileNameBytes.toArray, EncodingHelper.standardCharset(encoding)),
+      description = new String(descriptionBytes.toArray, EncodingHelper.standardCharset(encoding)),
+      data = data.toArray
     )
   }
 
