@@ -34,6 +34,7 @@ private[scalaID3] object FrameParser {
           case MusicCDid                                               => parseMusicCDidFrame(frameHeader)
           case Popularimeter                                           => parsePopularimeterFrame(frameHeader)
           case UnsyncLyrics                                            => parseUnsyncLyricsFrame(frameHeader)
+          case UniqueFileId                                            => parseUniqueFileIdFrame(frameHeader)
           case AudioEncryption                                         => parseAudioEncryptionFrame(frameHeader)
           case Commercial                                              => parseCommercialFrame(frameHeader)
           case NCON                                                    => parseNCONFrame(frameHeader)
@@ -202,6 +203,17 @@ private[scalaID3] object FrameParser {
       language = language,
       descriptor = new String(descriptorBytes.toArray, EncodingHelper.standardCharset(encoding)),
       lyrics = new String(lyricsBytes.toArray, EncodingHelper.standardCharset(encoding))
+    )
+  }
+
+  private def parseUniqueFileIdFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): UniqueFileIdFrame = {
+    val ownerIdBytes = file.takeWhile(_ != 0)
+    val id           = file.take(frameHeader.size - ownerIdBytes.size - 1)
+
+    UniqueFileIdFrame(
+      frameHeader = frameHeader,
+      ownerId = ownerIdBytes.map(_.toChar).mkString,
+      id = id.toArray
     )
   }
 

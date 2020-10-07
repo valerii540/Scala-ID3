@@ -77,6 +77,7 @@ object FrameTypes extends Enumeration {
   val Popularimeter: FrameType   = Value("POPM")
   val Private: FrameType         = Value("PRIV")
   val UnsyncLyrics: FrameType    = Value("USLT")
+  val UniqueFileId: FrameType    = Value("UFID")
 
   // Non-standard
   val NCON: FrameType = Value("NCON")
