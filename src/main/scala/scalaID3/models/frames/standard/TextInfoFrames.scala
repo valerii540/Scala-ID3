@@ -5,7 +5,6 @@ import scalaID3.models.enums.TextEncodings.Encoding
 import scalaID3.models.frames.Frame
 
 sealed trait TextInfoFrame extends Frame {
-  override val frameHeader: FrameHeader
   val encoding: Encoding
   val value: String
 }

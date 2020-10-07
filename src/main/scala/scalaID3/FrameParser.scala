@@ -5,7 +5,7 @@ import java.nio.charset.StandardCharsets
 
 import scalaID3.models.enums.FrameTypes._
 import scalaID3.models.enums.{FrameFlags, FrameTypes, PictureTypes, ReceivedAsTypes}
-import scalaID3.models.frames.nonstandard.NCONFrame
+import scalaID3.models.frames.nonstandard._
 import scalaID3.models.frames.standard._
 import scalaID3.models.frames.{Frame, UnknownFrame}
 import scalaID3.models.{FrameHeader, FrameWithPosition}
@@ -26,6 +26,7 @@ private[scalaID3] object FrameParser {
     headerParsingAttempt match {
       case Right(frameHeader) =>
         val frame: Frame = frameHeader.frameType match {
+          case iTunesFrame if iTunesFrame.toString.startsWith("TSO")   => parseITunesFrame(frameHeader)
           case textInfoFrame if textInfoFrame.toString.startsWith("T") => parseTextInfoFrame(frameHeader)
           case urlLinkFrame if urlLinkFrame.toString.startsWith("W")   => parseUrlLinkFrame(frameHeader)
           case Picture                                                 => parseAttachedPictureFrame(frameHeader)
@@ -37,7 +38,7 @@ private[scalaID3] object FrameParser {
           case UniqueFileId                                            => parseUniqueFileIdFrame(frameHeader)
           case AudioEncryption                                         => parseAudioEncryptionFrame(frameHeader)
           case Commercial                                              => parseCommercialFrame(frameHeader)
-          case NCON                                                    => parseNCONFrame(frameHeader)
+          case MusicMatchNCON                                          => parseNCONFrame(frameHeader)
         }
         traverseFile(acc + (frameHeader.frameType -> (FrameWithPosition(frame, framePosition) +: acc(frameHeader.frameType))))
 
@@ -217,6 +218,18 @@ private[scalaID3] object FrameParser {
     )
   }
 
+  private def parseITunesFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): ITunesFrame = {
+    val data = file.take(frameHeader.size)
+
+    frameHeader.frameType match {
+      case ITunesTitleSort       => ITunesTitleSortFrame(frameHeader, data.toArray)
+      case ITunesArtistSort      => ITunesArtistSortFrame(frameHeader, data.toArray)
+      case ITunesAlbumSort       => ITunesAlbumSortFrame(frameHeader, data.toArray)
+      case ITunesAlbumArtistSort => ITunesAlbumArtistSortFrame(frameHeader, data.toArray)
+      case ITunesComposerSort    => ITunesComposerSortFrame(frameHeader, data.toArray)
+    }
+  }
+
   //FIXME: not tested
   private def parseAudioEncryptionFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): AudioEncryptionFrame = {
     val ownerIdBytes  = file.takeWhile(_ != 0)
@@ -262,9 +275,9 @@ private[scalaID3] object FrameParser {
     )
   }
 
-  private def parseNCONFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): NCONFrame = {
+  private def parseNCONFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): MusicMatchNCONFrame = {
     val data = file.take(frameHeader.size)
 
-    NCONFrame(frameHeader = frameHeader, data = data.toArray)
+    MusicMatchNCONFrame(frameHeader = frameHeader, data = data.toArray)
   }
 }

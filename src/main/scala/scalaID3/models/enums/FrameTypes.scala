@@ -68,7 +68,7 @@ object FrameTypes extends Enumeration {
   val PublishersOfficialWebpage: FrameType    = Value("WPUB")
   val UserDefinedLink: FrameType              = Value("WXXX")
 
-  // Others
+  // Other frames
   val AudioEncryption: FrameType = Value("AENC")
   val Comment: FrameType         = Value("COMM")
   val Commercial: FrameType      = Value("COMR")
@@ -79,8 +79,14 @@ object FrameTypes extends Enumeration {
   val UnsyncLyrics: FrameType    = Value("USLT")
   val UniqueFileId: FrameType    = Value("UFID")
 
-  // Non-standard
-  val NCON: FrameType = Value("NCON")
+  // Non-standard frames
+  val MusicMatchNCON: FrameType        = Value("NCON")
+  val ITunesTitleSort: FrameType       = Value("TSOT")
+  val ITunesArtistSort: FrameType      = Value("TSOP")
+  val ITunesAlbumSort: FrameType       = Value("TSOA")
+  val ITunesAlbumArtistSort: FrameType = Value("TSO2")
+  val ITunesComposerSort: FrameType    = Value("TSOC")
 
+  //TODO: remove as debugging symbol
   val Unknown: FrameType = Value("????")
 }
