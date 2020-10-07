@@ -4,7 +4,7 @@ import java.io.RandomAccessFile
 import java.nio.charset.StandardCharsets
 
 import scalaID3.models.enums.FrameTypes._
-import scalaID3.models.enums.{FrameFlags, FrameTypes, PictureTypes, ReceivedAsTypes}
+import scalaID3.models.enums._
 import scalaID3.models.frames.nonstandard._
 import scalaID3.models.frames.standard._
 import scalaID3.models.frames.{Frame, UnknownFrame}
@@ -35,6 +35,7 @@ private[scalaID3] object FrameParser {
           case MusicCDid                                               => parseMusicCDidFrame(frameHeader)
           case Popularimeter                                           => parsePopularimeterFrame(frameHeader)
           case UnsyncLyrics                                            => parseUnsyncLyricsFrame(frameHeader)
+          case SyncLyrics                                              => parseSyncLyricsFrame(frameHeader)
           case UniqueFileId                                            => parseUniqueFileIdFrame(frameHeader)
           case AudioEncryption                                         => parseAudioEncryptionFrame(frameHeader)
           case Commercial                                              => parseCommercialFrame(frameHeader)
@@ -81,7 +82,7 @@ private[scalaID3] object FrameParser {
   }
 
   private def parseTextInfoFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): TextInfoFrame = {
-    val encoding = EncodingHelper.identify(file.readByte()).get
+    val encoding = TextEncodings(file.readByte())
 
     frameHeader.frameType match {
       case UserDefinedText =>
@@ -109,7 +110,7 @@ private[scalaID3] object FrameParser {
   private def parseUrlLinkFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): UrlLinkFrame =
     frameHeader.frameType match {
       case UserDefinedLink =>
-        val encoding         = EncodingHelper.identify(file.readByte()).get
+        val encoding         = TextEncodings(file.readByte())
         val descriptionBytes = file.takeWhile(_ != 0)
         val urlBytes         = file.take(frameHeader.size - 1 - descriptionBytes.size - 1)
 
@@ -130,7 +131,7 @@ private[scalaID3] object FrameParser {
     }
 
   private def parseCommentFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): CommentFrame = {
-    val encoding         = EncodingHelper.identify(file.readByte()).get
+    val encoding         = TextEncodings(file.readByte())
     val language         = file.take(3).map(_.toChar).mkString
     val descriptionBytes = file.takeWhile(_ != 0)
     val commentBytes     = file.take(frameHeader.size - 4 - descriptionBytes.size - 1)
@@ -176,7 +177,7 @@ private[scalaID3] object FrameParser {
   }
 
   private def parseAttachedPictureFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): AttachedPictureFrame = {
-    val encoding    = EncodingHelper.identify(file.readByte()).get
+    val encoding    = TextEncodings(file.readByte())
     val mimeType    = file.takeWhile(_ != 0)
     val pictureType = file.readByte()
     val description = file.takeWhile(_ != 0)
@@ -193,7 +194,7 @@ private[scalaID3] object FrameParser {
   }
 
   private def parseUnsyncLyricsFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): UnsyncLyricsFrame = {
-    val encoding        = EncodingHelper.identify(file.readByte()).get
+    val encoding        = TextEncodings(file.readByte())
     val language        = file.take(3).map(_.toChar).mkString
     val descriptorBytes = file.takeWhile(_ != 0)
     val lyricsBytes     = file.take(frameHeader.size - 1 - 3 - descriptorBytes.size - 1)
@@ -207,6 +208,27 @@ private[scalaID3] object FrameParser {
     )
   }
 
+  private def parseSyncLyricsFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): SyncLyricsFrame = {
+    val encoding        = TextEncodings(file.readByte())
+    val language        = file.take(3).map(_.toChar).mkString
+    val timestampFormat = Try(TimestampFormats(file.readByte())).recoverWith {
+      case _ =>
+        println("Unsupported timestamp format in the SyncLyricsFrame. Using MPEG based instead")
+        Success(TimestampFormats.MPEGBased)
+    }.get
+    val contentType     = ContentTypes(file.readByte())
+    val descriptor      = new String(file.take(frameHeader.size - 6 - 1).toArray, EncodingHelper.standardCharset(encoding))
+
+    SyncLyricsFrame(
+      frameHeader = frameHeader,
+      encoding = encoding,
+      language = language,
+      timestampFormat = timestampFormat,
+      contentType = contentType,
+      descriptor = descriptor
+    )
+  }
+
   private def parseUniqueFileIdFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): UniqueFileIdFrame = {
     val ownerIdBytes = file.takeWhile(_ != 0)
     val id           = file.take(frameHeader.size - ownerIdBytes.size - 1)
@@ -216,18 +238,6 @@ private[scalaID3] object FrameParser {
       ownerId = ownerIdBytes.map(_.toChar).mkString,
       id = id.toArray
     )
-  }
-
-  private def parseITunesFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): ITunesFrame = {
-    val data = file.take(frameHeader.size)
-
-    frameHeader.frameType match {
-      case ITunesTitleSort       => ITunesTitleSortFrame(frameHeader, data.toArray)
-      case ITunesArtistSort      => ITunesArtistSortFrame(frameHeader, data.toArray)
-      case ITunesAlbumSort       => ITunesAlbumSortFrame(frameHeader, data.toArray)
-      case ITunesAlbumArtistSort => ITunesAlbumArtistSortFrame(frameHeader, data.toArray)
-      case ITunesComposerSort    => ITunesComposerSortFrame(frameHeader, data.toArray)
-    }
   }
 
   //FIXME: not tested
@@ -248,7 +258,7 @@ private[scalaID3] object FrameParser {
 
   //FIXME: not tested
   private def parseCommercialFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): CommercialFrame = {
-    val encoding         = EncodingHelper.identify(file.readByte()).get
+    val encoding         = TextEncodings(file.readByte())
     val priceBytes       = file.takeWhile(_ != 0)
     val validUntilBytes  = file.take(16)
     val contactURLBytes  = file.takeWhile(_ != 0)
@@ -273,6 +283,18 @@ private[scalaID3] object FrameParser {
       pictureMIME = mimeTypeBytes.map(_.toChar).mkString,
       sellerLogo = logo.toArray
     )
+  }
+
+  private def parseITunesFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): ITunesFrame = {
+    val data = file.take(frameHeader.size)
+
+    frameHeader.frameType match {
+      case ITunesTitleSort       => ITunesTitleSortFrame(frameHeader, data.toArray)
+      case ITunesArtistSort      => ITunesArtistSortFrame(frameHeader, data.toArray)
+      case ITunesAlbumSort       => ITunesAlbumSortFrame(frameHeader, data.toArray)
+      case ITunesAlbumArtistSort => ITunesAlbumArtistSortFrame(frameHeader, data.toArray)
+      case ITunesComposerSort    => ITunesComposerSortFrame(frameHeader, data.toArray)
+    }
   }
 
   private def parseNCONFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): MusicMatchNCONFrame = {

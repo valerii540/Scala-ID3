@@ -1,5 +1,6 @@
 package scalaID3.models.enums
 
+/** Used by [[scalaID3.models.frames.standard.AttachedPictureFrame]] */
 object PictureTypes extends Enumeration {
   type PictureType = Value
 
