@@ -1,15 +1,17 @@
-# Project TODO
+# Scala ID3
 ## General features
-- [ ] ID3v1/ID3v2 support
-- [ ] Frames type safety
-- [ ] High level, functional API - no dealing with byte arrays
-- [ ] ID3 tag validation
-## ID3v1
-...
-## ID3v2
-### Tag reading support
+- ID3v1/ID3v2 support
+- Frames type safety
+- High level, functional API - no dealing with byte arrays
+- ID3 tag validation
+## TODO
+### ID3v1
+TBD
+### ID3v2
+#### Tag reading support
 - [ ] Standard frames
   - ...
+  - [x] **UFID** - Unique file ID frame
   - [x] **USLT** - Unsynchronized lyrics frame
   - [x] **POPM** - Popularimeter frame
   - [x] **MCDI** - Music CD identifier frame
@@ -80,19 +82,26 @@
     - [x] **TDRC** - Recording timestamp
     - [x] **TDTG** - Tagging timestamp
 - Non-standard frames
-  - [x] **NCON** - frame added by MusicMatch
+  - [x] **NCON** - frame added by MusicMatch*
+  - [x] **TSOT** - frame added by iTunes*
+  - [x] **TSOP** - frame added by iTunes*
+  - [x] **TSOA** - frame added by iTunes*
+  - [x] **TSO2** - frame added by iTunes*
+  - [x] **TSOC** - frame added by iTunes*
 - [x] Image frame materializing
 - [ ] ID3 frames validation
 - ...
-### Tag editing support
+
+\* - Only frame header with binary data
+#### Tag editing support
 - [ ] Frame adding/removing
 - [ ] Frame rewriting
 - [ ] Text frames encoding fixing
 - [ ] Non-standard frames removing
 - ...
-## Misc
-- File traversing efficiency research
-# Code hygiene
-- Unit tests
-- Strict null safety
-- Custom exceptions
+### Misc
+- [ ] File traversing efficiency research
+- [ ] Performance testing
+- [ ] Unit tests
+- [x] Strict null safety
+- [ ] Custom exceptions
