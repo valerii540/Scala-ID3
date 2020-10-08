@@ -27,14 +27,15 @@ object Helper {
       tmp.toIndexedSeq
     }
 
-    def takeWhile(p: Byte => Boolean): IndexedSeq[Byte] = {
+    def takeTerminatedBytes: IndexedSeq[Byte] = {
       val list = mutable.ListBuffer.empty[Byte]
 
       var go = true
       while (go) {
         val byte = file.readByte()
-        if (p(byte)) list += byte
-        else go = false
+        if (byte == 0) go = false
+
+        list += byte
       }
       list.toIndexedSeq
     }

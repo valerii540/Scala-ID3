@@ -89,13 +89,13 @@ private[scalaID3] object FrameParser {
 
     frameHeader.frameType match {
       case UserDefinedText =>
-        val descriptionBytes = file.takeWhile(_ != 0)
-        val informationBytes = file.take(frameHeader.size - descriptionBytes.length - 2)
+        val descriptionBytes = file.takeTerminatedBytes
+        val informationBytes = file.take(frameHeader.size - 1 - descriptionBytes.size)
 
         UserTextInfoFrame(
           frameHeader = frameHeader,
           encoding = encoding,
-          description = new String(descriptionBytes.toArray, EncodingHelper.standardCharset(encoding)),
+          description = new String(descriptionBytes.init.toArray, EncodingHelper.standardCharset(encoding)),
           value = new String(informationBytes.toArray, EncodingHelper.standardCharset(encoding))
         )
 
@@ -114,13 +114,13 @@ private[scalaID3] object FrameParser {
     frameHeader.frameType match {
       case UserDefinedLink =>
         val encoding         = TextEncodings(file.readByte())
-        val descriptionBytes = file.takeWhile(_ != 0)
-        val urlBytes         = file.take(frameHeader.size - 1 - descriptionBytes.size - 1)
+        val descriptionBytes = file.takeTerminatedBytes
+        val urlBytes         = file.take(frameHeader.size - 1 - descriptionBytes.size)
 
         UserDefinedUrlLinkFrame(
           frameHeader = frameHeader,
           encoding = encoding,
-          description = new String(descriptionBytes.toArray, EncodingHelper.standardCharset(encoding)),
+          description = new String(descriptionBytes.init.toArray, EncodingHelper.standardCharset(encoding)),
           url = new String(urlBytes.toArray, StandardCharsets.ISO_8859_1)
         )
 
@@ -136,25 +136,25 @@ private[scalaID3] object FrameParser {
   private def parseCommentFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): CommentFrame = {
     val encoding         = TextEncodings(file.readByte())
     val language         = file.take(3).map(_.toChar).mkString
-    val descriptionBytes = file.takeWhile(_ != 0)
-    val commentBytes     = file.take(frameHeader.size - 4 - descriptionBytes.size - 1)
+    val descriptionBytes = file.takeTerminatedBytes
+    val commentBytes     = file.take(frameHeader.size - 4 - descriptionBytes.size)
 
     CommentFrame(
       frameHeader = frameHeader,
       encoding = encoding,
       language = language,
-      description = new String(descriptionBytes.toArray, EncodingHelper.standardCharset(encoding)),
+      description = new String(descriptionBytes.init.toArray, EncodingHelper.standardCharset(encoding)),
       comment = new String(commentBytes.toArray, EncodingHelper.standardCharset(encoding))
     )
   }
 
   private def parsePrivateFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): PrivateFrame = {
-    val ownerIdBytes = file.takeWhile(_ != 0)
-    val privateData  = file.take(frameHeader.size - ownerIdBytes.size - 1)
+    val ownerIdBytes = file.takeTerminatedBytes
+    val privateData  = file.take(frameHeader.size - ownerIdBytes.size)
 
     PrivateFrame(
       frameHeader = frameHeader,
-      ownerId = ownerIdBytes.map(_.toChar).mkString,
+      ownerId = ownerIdBytes.init.map(_.toChar).mkString,
       privateData = privateData.toArray
     )
   }
@@ -166,32 +166,32 @@ private[scalaID3] object FrameParser {
   }
 
   private def parsePopularimeterFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): PopularimeterFrame = {
-    val emailBytes = file.takeWhile(_ != 0)
+    val emailBytes = file.takeTerminatedBytes
     val rating     = file.readUnsignedByte()
 
-    val counterSize = frameHeader.size - emailBytes.size - 4 - 1
+    val counterSize = frameHeader.size - emailBytes.size - 4
 
     PopularimeterFrame(
       frameHeader = frameHeader,
-      email = emailBytes.map(_.toChar).mkString,
+      email = emailBytes.init.map(_.toChar).mkString,
       rating = rating,
       counter = Option.when(counterSize > 0)(BigInt(file.take(counterSize).toArray))
     )
   }
 
   private def parseAttachedPictureFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): AttachedPictureFrame = {
-    val encoding    = TextEncodings(file.readByte())
-    val mimeType    = file.takeWhile(_ != 0)
-    val pictureType = file.readByte()
-    val description = file.takeWhile(_ != 0)
-    val pictureData = file.take(frameHeader.size - mimeType.size - description.size - 4).toArray
+    val encoding         = TextEncodings(file.readByte())
+    val mimeTypeBytes    = file.takeTerminatedBytes
+    val pictureType      = file.readByte()
+    val descriptionBytes = file.takeTerminatedBytes
+    val pictureData      = file.take(frameHeader.size - mimeTypeBytes.size - descriptionBytes.size - 2).toArray
 
     AttachedPictureFrame(
       frameHeader = frameHeader,
       textEncoding = encoding,
-      mimeType = mimeType.map(_.toChar).mkString,
+      mimeType = mimeTypeBytes.init.map(_.toChar).mkString,
       pictureType = PictureTypes(pictureType),
-      description = new String(description.toArray, EncodingHelper.standardCharset(encoding)),
+      description = new String(descriptionBytes.init.toArray, EncodingHelper.standardCharset(encoding)),
       pictureData = pictureData
     )
   }
@@ -199,14 +199,14 @@ private[scalaID3] object FrameParser {
   private def parseUnsyncLyricsFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): UnsyncLyricsFrame = {
     val encoding        = TextEncodings(file.readByte())
     val language        = file.take(3).map(_.toChar).mkString
-    val descriptorBytes = file.takeWhile(_ != 0)
-    val lyricsBytes     = file.take(frameHeader.size - 1 - 3 - descriptorBytes.size - 1)
+    val descriptorBytes = file.takeTerminatedBytes
+    val lyricsBytes     = file.take(frameHeader.size - 4 - descriptorBytes.size)
 
     UnsyncLyricsFrame(
       frameHeader = frameHeader,
       encoding = encoding,
       language = language,
-      descriptor = new String(descriptorBytes.toArray, EncodingHelper.standardCharset(encoding)),
+      descriptor = new String(descriptorBytes.init.toArray, EncodingHelper.standardCharset(encoding)),
       lyrics = new String(lyricsBytes.toArray, EncodingHelper.standardCharset(encoding))
     )
   }
@@ -233,43 +233,43 @@ private[scalaID3] object FrameParser {
   }
 
   private def parseUniqueFileIdFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): UniqueFileIdFrame = {
-    val ownerIdBytes = file.takeWhile(_ != 0)
-    val id           = file.take(frameHeader.size - ownerIdBytes.size - 1)
+    val ownerIdBytes = file.takeTerminatedBytes
+    val id           = file.take(frameHeader.size - ownerIdBytes.size)
 
     UniqueFileIdFrame(
       frameHeader = frameHeader,
-      ownerId = ownerIdBytes.map(_.toChar).mkString,
+      ownerId = ownerIdBytes.init.map(_.toChar).mkString,
       id = id.toArray
     )
   }
 
   private def parseEncapsulatedObjectFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): EncapsulatedObjectFrame = {
     val encoding         = TextEncodings(file.readByte())
-    val mimeTypeBytes    = file.takeWhile(_ != 0)
-    val fileNameBytes    = file.takeWhile(_ != 0)
-    val descriptionBytes = file.takeWhile(_ != 0)
-    val data             = file.take(frameHeader.size - 1 - mimeTypeBytes.size - 1 - fileNameBytes.size - 1 - descriptionBytes.size - 1)
+    val mimeTypeBytes    = file.takeTerminatedBytes
+    val fileNameBytes    = file.takeTerminatedBytes
+    val descriptionBytes = file.takeTerminatedBytes
+    val data             = file.take(frameHeader.size - 1 - mimeTypeBytes.size - fileNameBytes.size - descriptionBytes.size)
 
     EncapsulatedObjectFrame(
       frameHeader = frameHeader,
       encoding = encoding,
-      mimeType = mimeTypeBytes.map(_.toChar).mkString,
-      fileName = new String(fileNameBytes.toArray, EncodingHelper.standardCharset(encoding)),
-      description = new String(descriptionBytes.toArray, EncodingHelper.standardCharset(encoding)),
+      mimeType = mimeTypeBytes.init.map(_.toChar).mkString,
+      fileName = new String(fileNameBytes.init.toArray, EncodingHelper.standardCharset(encoding)),
+      description = new String(descriptionBytes.init.toArray, EncodingHelper.standardCharset(encoding)),
       data = data.toArray
     )
   }
 
   //FIXME: not tested
   private def parseAudioEncryptionFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): AudioEncryptionFrame = {
-    val ownerIdBytes  = file.takeWhile(_ != 0)
+    val ownerIdBytes  = file.takeTerminatedBytes
     val previewStart  = file.readShort()
     val previewLength = file.readShort()
-    val data          = file.take(frameHeader.size - ownerIdBytes.size - 4 - 1)
+    val data          = file.take(frameHeader.size - ownerIdBytes.size - 4)
 
     AudioEncryptionFrame(
       frameHeader = frameHeader,
-      ownerId = ownerIdBytes.map(_.toChar).mkString,
+      ownerId = ownerIdBytes.init.map(_.toChar).mkString,
       previewStart = previewStart,
       previewLength = previewLength,
       encryptedInfo = data.toArray
@@ -279,28 +279,27 @@ private[scalaID3] object FrameParser {
   //FIXME: not tested
   private def parseCommercialFrame(frameHeader: FrameHeader)(implicit file: RandomAccessFile): CommercialFrame = {
     val encoding         = TextEncodings(file.readByte())
-    val priceBytes       = file.takeWhile(_ != 0)
+    val priceBytes       = file.takeTerminatedBytes
     val validUntilBytes  = file.take(16)
-    val contactURLBytes  = file.takeWhile(_ != 0)
+    val contactURLBytes  = file.takeTerminatedBytes
     val receivedAs       = ReceivedAsTypes(file.readUnsignedByte())
-    val sellerBytes      = file.takeWhile(_ != 0)
-    val descriptionBytes = file.takeWhile(_ != 0)
-    val mimeTypeBytes    = file.takeWhile(_ != 0)
+    val sellerBytes      = file.takeTerminatedBytes
+    val descriptionBytes = file.takeTerminatedBytes
+    val mimeTypeBytes    = file.takeTerminatedBytes
     val logo =
       file.take(
-        frameHeader.size - 1 - priceBytes.size - validUntilBytes.size - contactURLBytes.size - 1 - sellerBytes.size - descriptionBytes.size - mimeTypeBytes.size - 1
-      )
+        frameHeader.size - 1 - priceBytes.size - validUntilBytes.size - contactURLBytes.size - 1 - sellerBytes.size - descriptionBytes.size - mimeTypeBytes.size)
 
     CommercialFrame(
       frameHeader = frameHeader,
       encoding = encoding,
-      price = priceBytes.map(_.toChar).mkString,
+      price = priceBytes.init.map(_.toChar).mkString,
       validUntil = validUntilBytes.map(_.toChar).mkString,
-      contactURL = contactURLBytes.map(_.toChar).mkString,
+      contactURL = contactURLBytes.init.map(_.toChar).mkString,
       receivedAs = receivedAs,
-      seller = new String(sellerBytes.toArray, EncodingHelper.standardCharset(encoding)),
-      description = new String(descriptionBytes.toArray, EncodingHelper.standardCharset(encoding)),
-      pictureMIME = mimeTypeBytes.map(_.toChar).mkString,
+      seller = new String(sellerBytes.init.toArray, EncodingHelper.standardCharset(encoding)),
+      description = new String(descriptionBytes.init.toArray, EncodingHelper.standardCharset(encoding)),
+      pictureMIME = mimeTypeBytes.init.map(_.toChar).mkString,
       sellerLogo = logo.toArray
     )
   }
