@@ -17,3 +17,5 @@ final case class ITunesAlbumSortFrame(frameHeader: FrameHeader, data: Array[Byte
 final case class ITunesAlbumArtistSortFrame(frameHeader: FrameHeader, data: Array[Byte]) extends ITunesFrame
 
 final case class ITunesComposerSortFrame(frameHeader: FrameHeader, data: Array[Byte]) extends ITunesFrame
+
+final case class ITunesPartOfCompilationFrame(frameHeader: FrameHeader, data: Array[Byte]) extends ITunesFrame

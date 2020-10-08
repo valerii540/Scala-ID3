@@ -26,21 +26,23 @@ private[scalaID3] object FrameParser {
     headerParsingAttempt match {
       case Right(frameHeader) =>
         val frame: Frame = frameHeader.frameType match {
-          case iTunesFrame if iTunesFrame.toString.startsWith("TSO")   => parseITunesFrame(frameHeader)
-          case textInfoFrame if textInfoFrame.toString.startsWith("T") => parseTextInfoFrame(frameHeader)
-          case urlLinkFrame if urlLinkFrame.toString.startsWith("W")   => parseUrlLinkFrame(frameHeader)
-          case Picture                                                 => parseAttachedPictureFrame(frameHeader)
-          case Comment                                                 => parseCommentFrame(frameHeader)
-          case Private                                                 => parsePrivateFrame(frameHeader)
-          case MusicCDid                                               => parseMusicCDidFrame(frameHeader)
-          case Popularimeter                                           => parsePopularimeterFrame(frameHeader)
-          case UnsyncLyrics                                            => parseUnsyncLyricsFrame(frameHeader)
-          case SyncLyrics                                              => parseSyncLyricsFrame(frameHeader)
-          case UniqueFileId                                            => parseUniqueFileIdFrame(frameHeader)
-          case EncapsulatedObject                                      => parseEncapsulatedObjectFrame(frameHeader)
-          case AudioEncryption                                         => parseAudioEncryptionFrame(frameHeader)
-          case Commercial                                              => parseCommercialFrame(frameHeader)
-          case MusicMatchNCON                                          => parseNCONFrame(frameHeader)
+          // Standard frames
+          case frameType if frameType.isTextInfoFrameType => parseTextInfoFrame(frameHeader)
+          case frameType if frameType.isUrlLinkFrameType  => parseUrlLinkFrame(frameHeader)
+          case Picture                                    => parseAttachedPictureFrame(frameHeader)
+          case Comment                                    => parseCommentFrame(frameHeader)
+          case Private                                    => parsePrivateFrame(frameHeader)
+          case MusicCDid                                  => parseMusicCDidFrame(frameHeader)
+          case Popularimeter                              => parsePopularimeterFrame(frameHeader)
+          case UnsyncLyrics                               => parseUnsyncLyricsFrame(frameHeader)
+          case SyncLyrics                                 => parseSyncLyricsFrame(frameHeader)
+          case UniqueFileId                               => parseUniqueFileIdFrame(frameHeader)
+          case EncapsulatedObject                         => parseEncapsulatedObjectFrame(frameHeader)
+          case AudioEncryption                            => parseAudioEncryptionFrame(frameHeader)
+          case Commercial                                 => parseCommercialFrame(frameHeader)
+          // Non-standard frames
+          case frameType if frameType.isITunesFrameType => parseITunesFrame(frameHeader)
+          case MusicMatchNCON                           => parseNCONFrame(frameHeader)
         }
         traverseFile(acc + (frameHeader.frameType -> (FrameWithPosition(frame, framePosition) +: acc(frameHeader.frameType))))
 
@@ -307,11 +309,12 @@ private[scalaID3] object FrameParser {
     val data = file.take(frameHeader.size)
 
     frameHeader.frameType match {
-      case ITunesTitleSort       => ITunesTitleSortFrame(frameHeader, data.toArray)
-      case ITunesArtistSort      => ITunesArtistSortFrame(frameHeader, data.toArray)
-      case ITunesAlbumSort       => ITunesAlbumSortFrame(frameHeader, data.toArray)
-      case ITunesAlbumArtistSort => ITunesAlbumArtistSortFrame(frameHeader, data.toArray)
-      case ITunesComposerSort    => ITunesComposerSortFrame(frameHeader, data.toArray)
+      case ITunesTitleSort         => ITunesTitleSortFrame(frameHeader, data.toArray)
+      case ITunesArtistSort        => ITunesArtistSortFrame(frameHeader, data.toArray)
+      case ITunesAlbumSort         => ITunesAlbumSortFrame(frameHeader, data.toArray)
+      case ITunesAlbumArtistSort   => ITunesAlbumArtistSortFrame(frameHeader, data.toArray)
+      case ITunesComposerSort      => ITunesComposerSortFrame(frameHeader, data.toArray)
+      case ITunesPartOfCompilation => ITunesPartOfCompilationFrame(frameHeader, data.toArray)
     }
   }
 
