@@ -5,6 +5,8 @@
 # Scala
 target/
 project/target/
+.bloop/
+.metals/
+.bsp/
 
-.idea
-src/main/scala/Main.scala
+.idea/

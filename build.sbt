@@ -1,7 +1,8 @@
-name := "Scala-ID3"
+name := "scala-id3"
 
-version := "0.1"
+ThisBuild / organization := "org.scala-id3"
+ThisBuild / version := "0.1"
 
-scalaVersion := "2.13.3"
+scalaVersion := "2.13.4"
 
 scalacOptions ++= Seq("-unchecked", "-deprecation")
