@@ -1,9 +1,5 @@
 package scalaID3
 
-import java.awt.image.BufferedImage
-import java.io.{ByteArrayInputStream, File, RandomAccessFile}
-
-import javax.imageio.ImageIO
 import scalaID3.models._
 import scalaID3.models.enums.FrameTypes.FrameType
 import scalaID3.models.enums.PictureTypes.PictureType
@@ -12,21 +8,29 @@ import scalaID3.models.frames.Frame
 import scalaID3.models.frames.standard.AttachedPictureFrame
 import scalaID3.utils.Helper._
 
-import scala.util.{Failure, Success, Try}
+import java.awt.image.BufferedImage
+import java.io.{ByteArrayInputStream, File, RandomAccessFile}
+import javax.imageio.ImageIO
+import scala.util.Using.Releasable
+import scala.util.{Failure, Try}
 
 sealed trait ID3TagOps {
   def getFrame(frameType: FrameType): Option[Frame]
   def getPictureFrame(pictureType: PictureType): Option[AttachedPictureFrame]
-  def savePictureAs(path: String, pictureType: PictureType): Try[File]
+  def savePictureAs(path: String, pictureType: PictureType): File
   def close(): Unit
 }
 
-final class ID3Tag(private val filePath: String) extends ID3TagOps {
-  private implicit val file: RandomAccessFile = new RandomAccessFile(filePath, "r")
+object ID3Tag {
+  implicit val releasable: Releasable[ID3Tag] = resource => resource.close()
+}
+
+final class ID3Tag(filePath: String) extends ID3TagOps {
+  private[this] implicit val file: RandomAccessFile = new RandomAccessFile(filePath, "r")
 
   val header: ID3Header = parseHeader()
 
-  private val framesWithPositions = FrameParser.traverseFile(Map.empty.withDefaultValue(Nil))
+  private[this] val framesWithPositions = FrameParser.traverseFile(Map.empty.withDefaultValue(Nil))
 
   //TODO: is it needed?
   def getFrames: Seq[Frame] = framesWithPositions.values.flatten.map(_.frame).toSeq
@@ -44,7 +48,7 @@ final class ID3Tag(private val filePath: String) extends ID3TagOps {
       case Failure(exception) =>
         file.close()
         throw exception
-      case _ =>
+      case _                  =>
     }
 
     val isExtended =
@@ -54,11 +58,11 @@ final class ID3Tag(private val filePath: String) extends ID3TagOps {
       } else true
 
     val extendedHeaderSize = Option.when(isExtended)(file.readInt())
-    val extendedFlags = Option.when(isExtended)(file.take(2)).map { bytes =>
+    val extendedFlags      = Option.when(isExtended)(file.take(2)).map { bytes =>
       Set(Option.when((1 << 7 & bytes.head) != 0)(ExtendedFlags.HasCRC)).flatten
     }
-    val sizeOfPadding = Option.when(isExtended)(file.readInt())
-    val CRC32         = Option.when(isExtended && extendedFlags.get.contains(ExtendedFlags.HasCRC))(file.readInt())
+    val sizeOfPadding      = Option.when(isExtended)(file.readInt())
+    val CRC32              = Option.when(isExtended && extendedFlags.get.contains(ExtendedFlags.HasCRC))(file.readInt())
 
     ID3Header(
       id = id,
@@ -76,20 +80,17 @@ final class ID3Tag(private val filePath: String) extends ID3TagOps {
     )
   }
 
-  override def savePictureAs(path: String, pictureType: PictureType = PictureTypes.FrontCover): Try[File] =
-    Try(getPictureFrame(pictureType).get).transform(
-      pictureFrame => {
-        val mimeType = pictureFrame.mimeType.split("/").last
+  override def savePictureAs(path: String, pictureType: PictureType = PictureTypes.FrontCover): File = {
+    val pictureFrame = getPictureFrame(pictureType).get
+    val mimeType     = pictureFrame.mimeType.split("/").last
 
-        assert(mimeType != "image", "Missing picture type in the frame")
+    assert(mimeType != "image", "Missing picture type in the frame")
 
-        val bi: BufferedImage = ImageIO.read(new ByteArrayInputStream(pictureFrame.pictureData))
-        val image             = new File(path.replaceFirst(removeExtensionRegex, "") + "." + mimeType)
-        ImageIO.write(bi, mimeType, image)
-        Success(image)
-      },
-      exception => Failure(exception)
-    )
+    val bi: BufferedImage = ImageIO.read(new ByteArrayInputStream(pictureFrame.pictureData))
+    val image             = new File(path.replaceFirst(removeExtensionRegex, "") + "." + mimeType)
+    ImageIO.write(bi, mimeType, image)
+    image
+  }
 
   override def getFrame(frameType: FrameType): Option[Frame] =
     framesWithPositions(frameType).headOption.map(_.frame)
@@ -98,5 +99,5 @@ final class ID3Tag(private val filePath: String) extends ID3TagOps {
     framesWithPositions(FrameTypes.Picture)
       .collectFirst { case FrameWithPosition(frame: AttachedPictureFrame, _) if frame.pictureType == pictureType => frame }
 
-  override def close(): Unit = file.close()
+  override def close(): Unit                                                                                     = file.close()
 }
